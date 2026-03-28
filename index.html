@@ -179,26 +179,75 @@
 
     <h2 class="section-title">Proyectos publicados</h2>
 
-    <section class="grid">
-      <article class="card">
-        <span class="tag">Juego educativo</span>
-        <h2>Tablas de multiplicar para Honorio</h2>
-        <p>Juego para practicar tablas con vidas, puntaje, cronómetro y teclado en pantalla. Ajustado para que se lleve bastante mejor con iPhone y Safari.</p>
-        <div class="actions">
-          <a class="btn btn-primary" href="tablas_multiplicar_Iphone.html">Abrir</a>
-          <a class="btn btn-secondary" href="tablas_multiplicar_Iphone.html" target="_blank" rel="noopener">Abrir en pestaña nueva</a>
-        </div>
-      </article>
+    <section class="grid" id="projectsGrid"></section>
 
-      <article class="card">
-        <span class="tag">Espacio listo</span>
-        <h2>Próximo proyecto</h2>
-        <p>Cuando subas otro archivo HTML, agregás otra tarjeta acá con su título, una descripción cortita y el link. Simple, prolijo y sin alquimia.</p>
-        <div class="actions">
-          <a class="btn btn-secondary" href="#">Próximamente</a>
-        </div>
-      </article>
-    </section>
+    <script>
+      const proyectos = [
+        {
+          titulo: "Tablas de multiplicar para Honorio",
+          descripcion: "Juego para practicar tablas con vidas, puntaje, cronómetro y teclado en pantalla. Ajustado para que se lleve bastante mejor con iPhone y Safari.",
+          archivo: "tablas_multiplicar.html",
+          etiqueta: "Juego educativo"
+        },
+        {
+          titulo: "Próximo proyecto",
+          descripcion: "Cuando subas otro archivo HTML, solo agregás un nuevo bloque dentro del arreglo proyectos con título, descripción, archivo y etiqueta. La tarjeta se arma sola, como debe ser.",
+          archivo: "#",
+          etiqueta: "Espacio listo"
+        }
+      ];
+
+      const projectsGrid = document.getElementById('projectsGrid');
+
+      function crearTarjeta(proyecto) {
+        const article = document.createElement('article');
+        article.className = 'card';
+
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = proyecto.etiqueta || 'Proyecto';
+
+        const title = document.createElement('h2');
+        title.textContent = proyecto.titulo || 'Sin título';
+
+        const desc = document.createElement('p');
+        desc.textContent = proyecto.descripcion || 'Sin descripción.';
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        const openBtn = document.createElement('a');
+        openBtn.className = 'btn btn-primary';
+        openBtn.textContent = proyecto.archivo === '#' ? 'Próximamente' : 'Abrir';
+        openBtn.href = proyecto.archivo || '#';
+
+        actions.appendChild(openBtn);
+
+        if (proyecto.archivo && proyecto.archivo !== '#') {
+          const newTabBtn = document.createElement('a');
+          newTabBtn.className = 'btn btn-secondary';
+          newTabBtn.textContent = 'Abrir en pestaña nueva';
+          newTabBtn.href = proyecto.archivo;
+          newTabBtn.target = '_blank';
+          newTabBtn.rel = 'noopener';
+          actions.appendChild(newTabBtn);
+        } else {
+          openBtn.classList.remove('btn-primary');
+          openBtn.classList.add('btn-secondary');
+        }
+
+        article.appendChild(tag);
+        article.appendChild(title);
+        article.appendChild(desc);
+        article.appendChild(actions);
+
+        return article;
+      }
+
+      proyectos.forEach(proyecto => {
+        projectsGrid.appendChild(crearTarjeta(proyecto));
+      });
+    </script>
 
     <p class="note">Sugerencia práctica: dejá este archivo como <strong>index.html</strong> y guardá cada app con su propio nombre, por ejemplo <strong>tablas_multiplicar.html</strong>.</p>
   </div>
