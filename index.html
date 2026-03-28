@@ -2,243 +2,205 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Prueba simple de archivos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f80ed" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Mis proyectos HTML</title>
   <style>
-    :root {
-      color-scheme: light;
-      --bg: #f5f7fb;
-      --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --line: #dbe2ea;
-      --accent: #2563eb;
-      --accent-2: #1d4ed8;
+    :root{
+      --bg1:#f7fbff;
+      --bg2:#eef7ff;
+      --card:#ffffff;
+      --text:#183153;
+      --muted:#5f728c;
+      --accent:#2f80ed;
+      --accent2:#56ccf2;
+      --line:#dbe7f3;
+      --shadow:0 12px 30px rgba(24,49,83,.10);
+      --radius:24px;
     }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(180deg, #eef3ff, var(--bg));
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html{
+      height:100%;
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
     }
-
-    .card {
-      width: 100%;
-      max-width: 560px;
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: 22px;
-      box-shadow: 0 14px 40px rgba(0,0,0,0.08);
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      min-height:100vh;
+      min-height:100dvh;
+      padding:22px;
+      padding-top:max(22px, env(safe-area-inset-top));
+      padding-right:max(22px, env(safe-area-inset-right));
+      padding-bottom:max(22px, env(safe-area-inset-bottom));
+      padding-left:max(22px, env(safe-area-inset-left));
+      -webkit-text-size-adjust:100%;
     }
-
-    h1 {
-      margin: 0 0 10px;
-      font-size: 1.6rem;
+    .wrap{
+      width:min(1100px,100%);
+      margin:0 auto;
     }
-
-    p {
-      margin: 0 0 16px;
-      color: var(--muted);
-      line-height: 1.5;
+    .hero{
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#fff;
+      border-radius:32px;
+      padding:28px 24px;
+      box-shadow:var(--shadow);
+      margin-bottom:18px;
     }
-
-    textarea {
-      width: 100%;
-      min-height: 180px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 14px;
-      font-size: 16px;
-      resize: vertical;
-      outline: none;
+    .hero h1{
+      margin:0 0 10px;
+      font-size:clamp(1.8rem,4vw,3rem);
     }
-
-    textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    .hero p{
+      margin:0;
+      font-size:1rem;
+      opacity:.96;
+      max-width:760px;
+      line-height:1.5;
     }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 14px;
+    .pill-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:16px;
     }
-
-    button, label.file-btn {
-      border: 0;
-      border-radius: 14px;
-      padding: 14px 16px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: transform 0.06s ease, opacity 0.2s ease, background 0.2s ease;
-      user-select: none;
+    .pill{
+      background:rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.28);
+      border-radius:999px;
+      padding:8px 12px;
+      font-weight:bold;
+      font-size:.95rem;
     }
-
-    button:active, label.file-btn:active {
-      transform: scale(0.98);
+    .section-title{
+      margin:18px 0 12px;
+      font-size:1.15rem;
     }
-
-    .primary {
-      background: var(--accent);
-      color: white;
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:16px;
     }
-
-    .primary:hover {
-      background: var(--accent-2);
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
     }
-
-    .secondary {
-      background: #eef2ff;
-      color: #1e3a8a;
-      border: 1px solid #c7d2fe;
+    .card h2{
+      margin:0;
+      font-size:1.15rem;
     }
-
-    input[type="file"] {
-      display: none;
+    .card p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.5;
+      flex:1;
     }
-
-    .status {
-      margin-top: 14px;
-      padding: 12px 14px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      color: var(--muted);
-      font-size: 14px;
-      min-height: 46px;
+    .tag{
+      display:inline-block;
+      width:max-content;
+      background:#eef5ff;
+      color:#1d4e89;
+      border:1px solid #d6e5fb;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:.86rem;
+      font-weight:bold;
     }
-
-    .tip {
-      margin-top: 14px;
-      font-size: 13px;
-      color: var(--muted);
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
     }
-
-    @media (max-width: 520px) {
-      .row {
-        grid-template-columns: 1fr;
+    a.btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:46px;
+      padding:12px 16px;
+      border-radius:16px;
+      text-decoration:none;
+      font-weight:bold;
+      font-size:16px;
+    }
+    .btn-primary{
+      background:var(--accent);
+      color:#fff;
+    }
+    .btn-secondary{
+      background:#eef5ff;
+      color:var(--text);
+      border:1px solid #d6e5fb;
+    }
+    .note{
+      margin-top:20px;
+      color:var(--muted);
+      font-size:.95rem;
+      text-align:center;
+    }
+    @media (max-width:720px){
+      body{
+        padding:14px;
+        padding-top:max(14px, env(safe-area-inset-top));
+        padding-right:max(14px, env(safe-area-inset-right));
+        padding-bottom:max(14px, env(safe-area-inset-bottom));
+        padding-left:max(14px, env(safe-area-inset-left));
+      }
+      .hero{
+        border-radius:24px;
+        padding:22px 18px;
+      }
+      .card{
+        border-radius:20px;
       }
     }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>Prueba simple de archivos</h1>
-    <p>Escribí algo, guardalo dentro del navegador y también exportalo como archivo .txt. Ideal para probar en iPhone, Android o Windows.</p>
+  <div class="wrap">
+    <section class="hero">
+      <h1>📚 Mis proyectos HTML</h1>
+      <p>Acá voy dejando las pruebas, juegos y apps que voy armando. Una especie de índice prolijo para no tener un corral de archivos sueltos dando vueltas por el repo.</p>
+      <div class="pill-row">
+        <span class="pill">GitHub Pages</span>
+        <span class="pill">Compatible con iPhone</span>
+        <span class="pill">Entrada principal del repo</span>
+      </div>
+    </section>
 
-    <textarea id="texto" placeholder="Escribí algo acá..."></textarea>
+    <h2 class="section-title">Proyectos publicados</h2>
 
-    <div class="row">
-      <button class="primary" id="guardarLocal">Guardar en el navegador</button>
-      <button class="secondary" id="cargarLocal">Cargar lo guardado</button>
-      <button class="primary" id="exportarTxt">Exportar TXT</button>
-      <label class="file-btn secondary" for="importarTxt">Importar TXT</label>
-      <input type="file" id="importarTxt" accept=".txt,text/plain" />
-    </div>
+    <section class="grid">
+      <article class="card">
+        <span class="tag">Juego educativo</span>
+        <h2>Tablas de multiplicar para Honorio</h2>
+        <p>Juego para practicar tablas con vidas, puntaje, cronómetro y teclado en pantalla. Ajustado para que se lleve bastante mejor con iPhone y Safari.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="tablas_multiplicar.html">Abrir</a>
+          <a class="btn btn-secondary" href="tablas_multiplicar.html" target="_blank" rel="noopener">Abrir en pestaña nueva</a>
+        </div>
+      </article>
 
-    <div class="status" id="estado">Listo para probar.</div>
-    <div class="tip">En iPhone, exportar desde un HTML local puede ser caprichoso. Por eso esta versión intenta primero compartir o guardar el archivo con la hoja de compartir de iOS y, si no puede, abre una vista alternativa.</div>
-  </main>
+      <article class="card">
+        <span class="tag">Espacio listo</span>
+        <h2>Próximo proyecto</h2>
+        <p>Cuando subas otro archivo HTML, agregás otra tarjeta acá con su título, una descripción cortita y el link. Simple, prolijo y sin alquimia.</p>
+        <div class="actions">
+          <a class="btn btn-secondary" href="#">Próximamente</a>
+        </div>
+      </article>
+    </section>
 
-  <script>
-    const texto = document.getElementById('texto');
-    const estado = document.getElementById('estado');
-    const KEY = 'prueba_simple_archivos_texto';
-
-    function setEstado(msg) {
-      estado.textContent = msg;
-    }
-
-    function cargarAutomatico() {
-      const valor = localStorage.getItem(KEY);
-      if (valor !== null) {
-        texto.value = valor;
-        setEstado('Se cargó automáticamente el texto guardado en este navegador.');
-      }
-    }
-
-    document.getElementById('guardarLocal').addEventListener('click', () => {
-      localStorage.setItem(KEY, texto.value);
-      setEstado('Texto guardado dentro del navegador.');
-    });
-
-    document.getElementById('cargarLocal').addEventListener('click', () => {
-      const valor = localStorage.getItem(KEY);
-      if (valor === null) {
-        setEstado('No había nada guardado todavía.');
-        return;
-      }
-      texto.value = valor;
-      setEstado('Texto cargado desde el navegador.');
-    });
-
-    document.getElementById('exportarTxt').addEventListener('click', async () => {
-      const contenido = texto.value || 'Archivo de prueba vacío.';
-      const nombre = 'prueba-archivos.txt';
-
-      try {
-        const archivo = new File([contenido], nombre, { type: 'text/plain;charset=utf-8' });
-
-        if (navigator.canShare && navigator.canShare({ files: [archivo] }) && navigator.share) {
-          await navigator.share({
-            files: [archivo],
-            title: 'Exportar TXT',
-            text: 'Guardar o compartir archivo de texto'
-          });
-          setEstado('Se abrió la hoja de compartir de iPhone para guardar o enviar el TXT.');
-          return;
-        }
-      } catch (error) {
-      }
-
-      try {
-        const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = nombre;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1500);
-        setEstado('Se intentó exportar el TXT. Si no se descargó solo, revisá la hoja de compartir o la app Archivos.');
-      } catch (error) {
-        setEstado('No se pudo exportar el archivo en este dispositivo.');
-      }
-    });
-
-    document.getElementById('importarTxt').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) {
-        setEstado('No se seleccionó ningún archivo.');
-        return;
-      }
-
-      try {
-        const contenido = await file.text();
-        texto.value = contenido;
-        setEstado(`Archivo importado: ${file.name}`);
-      } catch (error) {
-        setEstado('No se pudo leer el archivo.');
-      }
-
-      e.target.value = '';
-    });
-
-    cargarAutomatico();
-  </script>
+    <p class="note">Sugerencia práctica: dejá este archivo como <strong>index.html</strong> y guardá cada app con su propio nombre, por ejemplo <strong>tablas_multiplicar.html</strong>.</p>
+  </div>
 </body>
 </html>
