@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>¡Expedición Honorio!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+            color: #334155;
+        }
+
+        /* Estilo de videojuego para los botones/pines */
+        .pin {
+            position: absolute;
+            /* Usamos variable de CSS para escalar dinámicamente cada pin */
+            transform: translate(-50%, -50%) scale(var(--pin-scale, 1));
+            border: 3px solid white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            cursor: pointer;
+            z-index: 10;
+            transform-origin: center center;
+        }
+
+        /* Desactivar transición al arrastrar para que sea instantáneo */
+        .pin.dragging {
+            transition: none !important;
+            transform: translate(-50%, -50%) scale(calc(var(--pin-scale, 1) * 1.2));
+            z-index: 100;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .pin:hover:not(.editing), .pin:active:not(.editing) {
+            transform: translate(-50%, -50%) scale(calc(var(--pin-scale, 1) * 1.15));
+            z-index: 50;
+        }
+
+        /* Resaltado visual en modo edición al seleccionar */
+        .pin.selected-edit {
+            border-color: #2563eb !important;
+            border-style: dashed !important;
+            z-index: 80;
+        }
+
+        .pin.pending {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            animation: pulse 2s infinite;
+        }
+
+        .pin.answered, .pin.editing {
+            border-radius: 9999px; /* Pill shape */
+            padding: 4px 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            font-size: 0.85rem;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        /* Colores según el estado */
+        .name-correct { background-color: #4ade80; border-color: #22c55e; }
+        .name-incorrect { background-color: #f87171; border-color: #ef4444; }
+        .cap-correct { background-color: #16a34a; border-color: #15803d; }
+        .cap-incorrect { background-color: #dc2626; border-color: #b91c1c; }
+        .edit-mode-pin { background-color: #f59e0b; border-color: #d97706; cursor: grab; animation: none;}
+        .edit-mode-pin:active { cursor: grabbing; }
+
+        /* Modal optimizado (sin blur y animación más simple para mejor rendimiento) */
+        #modal-backdrop {
+            transition: opacity 0.2s ease;
+        }
+        
+        #modal-content {
+            transition: transform 0.2s ease-out;
+        }
+
+        .hidden-modal {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .hidden-modal #modal-content {
+            transform: scale(0.8) translateY(20px);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%) scale(var(--pin-scale, 1)) translateX(0); }
+            25% { transform: translate(-50%, -50%) scale(var(--pin-scale, 1)) translateX(-5px) rotate(-5deg); }
+            75% { transform: translate(-50%, -50%) scale(var(--pin-scale, 1)) translateX(5px) rotate(5deg); }
+        }
+        .shake { animation: shake 0.4s; }
+
+        .btn-option {
+            transition: transform 0.1s, background-color 0.1s;
+            border-bottom-width: 4px;
+        }
+        .btn-option:active {
+            transform: translateY(4px);
+            border-bottom-width: 0px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col overflow-hidden">
+
+    <!-- Header re-diseñado -->
+    <header class="pt-8 pb-3 px-4 bg-white/90 shadow-md z-20 rounded-b-[2rem] border-b-4 border-blue-200 relative">
+        <div class="flex justify-between items-start">
+            <div class="flex-1 text-center">
+                <h1 class="text-3xl font-bold text-blue-600 tracking-tight drop-shadow-sm flex justify-center items-center gap-2">
+                    🚀 ¡Misión Argentina! 🇦🇷
+                </h1>
+                <p class="text-slate-600 font-semibold mt-1 text-sm bg-blue-100 inline-block px-4 py-1 rounded-full border border-blue-200">
+                    👦🏻 Agente Honorio: Toca los puntos
+                </p>
+            </div>
+            <!-- Botón de ajustes -->
+            <button onclick="toggleEditMode()" class="absolute right-4 top-10 bg-slate-100 p-2 rounded-full shadow hover:bg-slate-200 transition-colors border-2 border-slate-300">
+                ⚙️
+            </button>
+        </div>
+    </header>
+
+    <!-- Barra de Edición (Oculta por defecto) -->
+    <div id="edit-bar" class="hidden bg-yellow-400 text-yellow-900 px-4 py-3 flex flex-col gap-2 shadow-md z-30 font-bold border-b-4 border-yellow-500">
+        <div class="flex justify-between items-center">
+            <span class="text-sm">Modo Ajuste: Arrastrá los puntos</span>
+            <button onclick="saveEditMode()" class="bg-white px-4 py-1 rounded-full shadow-sm text-yellow-600 hover:bg-yellow-50 border-2 border-yellow-500">
+                💾 Guardar
+            </button>
+        </div>
+        <!-- Controles de tamaño (aparecen al tocar un pin) -->
+        <div id="size-controls" class="hidden flex justify-center items-center gap-4 bg-yellow-300 rounded-lg py-1 px-4 mt-1">
+            <span class="text-sm">Tamaño:</span>
+            <button onclick="changeScale(-0.1)" class="bg-white w-8 h-8 rounded-full shadow flex items-center justify-center text-xl hover:bg-gray-100 active:scale-95">-</button>
+            <button onclick="changeScale(0.1)" class="bg-white w-8 h-8 rounded-full shadow flex items-center justify-center text-xl hover:bg-gray-100 active:scale-95">+</button>
+        </div>
+    </div>
+
+    <!-- Contenedor del Mapa -->
+    <main class="flex-1 w-full relative overflow-y-auto overflow-x-hidden" id="scroll-area">
+        <div class="relative w-full max-w-lg mx-auto pb-20" style="aspect-ratio: 1/2; min-height: 800px;">
+            <!-- Imagen de fondo -->
+            <img src="mapa_argentina.png" alt="Mapa de Argentina" class="absolute inset-0 w-full h-full object-contain opacity-90 pointer-events-none" draggable="false" />
+            
+            <!-- Contenedor donde se inyectan los pines mágicamente -->
+            <div id="pins-container" class="absolute inset-0 w-full h-full"></div>
+        </div>
+    </main>
+
+    <!-- Modal (Pop-up Optimizado sin Blur) -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 hidden-modal">
+        <div id="modal-content" class="bg-white rounded-[2rem] shadow-xl w-full max-w-sm overflow-hidden flex flex-col border-4 border-white">
+            
+            <div id="modal-header" class="bg-blue-500 p-6 text-center relative overflow-hidden">
+                <!-- Decoración simple -->
+                <div class="absolute -top-4 -right-4 w-16 h-16 bg-white opacity-20 rounded-full"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full transform -translate-x-1/2 translate-y-1/2"></div>
+                
+                <h2 id="modal-icon" class="text-4xl mb-2">🗺️</h2>
+                <h2 id="modal-title" class="text-2xl font-bold text-white drop-shadow-md">¿Qué provincia es?</h2>
+            </div>
+            
+            <div class="p-5 flex flex-col gap-3 bg-slate-50" id="modal-options">
+                <!-- Botones inyectados dinámicamente -->
+            </div>
+            
+            <div class="px-5 pb-5 bg-slate-50 text-center">
+                <button onclick="closeModal()" class="w-full py-3 text-slate-400 font-bold text-sm uppercase tracking-wider rounded-xl hover:bg-slate-200 transition-colors">
+                    Volver al mapa
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla de feedback rápido (¡Correcto! o ¡Ups!) -->
+    <div id="feedback-overlay" class="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-200">
+        <div id="feedback-card" class="bg-white px-8 py-6 rounded-3xl shadow-xl text-center transform scale-50 transition-transform duration-300">
+            <div id="feedback-emoji" class="text-6xl mb-2">⭐</div>
+            <h2 id="feedback-text" class="text-3xl font-bold text-green-500">¡Excelente!</h2>
+        </div>
+    </div>
+
+    <script>
+        // Datos iniciales de Provincias (CABA eliminado, scale añadido)
+        const defaultProvinces = [
+            { id: 'jujuy', name: "Jujuy", capital: "S.S. de Jujuy", top: "8%", left: "41%", scale: 1 },
+            { id: 'salta', name: "Salta", capital: "Salta", top: "12%", left: "44%", scale: 1 },
+            { id: 'formosa', name: "Formosa", capital: "Formosa", top: "18%", left: "67%", scale: 1 },
+            { id: 'chaco', name: "Chaco", capital: "Resistencia", top: "24%", left: "62%", scale: 1 },
+            { id: 'misiones', name: "Misiones", capital: "Posadas", top: "22%", left: "84%", scale: 1 },
+            { id: 'corrientes', name: "Corrientes", capital: "Corrientes", top: "31%", left: "74%", scale: 1 },
+            { id: 'entrerios', name: "Entre Ríos", capital: "Paraná", top: "41%", left: "68%", scale: 1 },
+            { id: 'santafe', name: "Santa Fe", capital: "Santa Fe", top: "35%", left: "60%", scale: 1 },
+            { id: 'santiago', name: "Santiago del Estero", short: "S. del Estero", capital: "Santiago del Estero", top: "27%", left: "52%", scale: 1 },
+            { id: 'tucuman', name: "Tucumán", capital: "S.M. de Tucumán", top: "21%", left: "43%", scale: 1 },
+            { id: 'catamarca', name: "Catamarca", capital: "S.F. del Valle", top: "25%", left: "34%", scale: 1 },
+            { id: 'larioja', name: "La Rioja", capital: "La Rioja", top: "33%", left: "33%", scale: 1 },
+            { id: 'sanjuan', name: "San Juan", capital: "San Juan", top: "42%", left: "30%", scale: 1 },
+            { id: 'mendoza', name: "Mendoza", capital: "Mendoza", top: "50%", left: "32%", scale: 1 },
+            { id: 'sanluis', name: "San Luis", capital: "San Luis", top: "47%", left: "44%", scale: 1 },
+            { id: 'cordoba', name: "Córdoba", capital: "Córdoba", top: "40%", left: "50%", scale: 1 },
+            { id: 'buenosaires', name: "Buenos Aires", capital: "La Plata", top: "53%", left: "62%", scale: 1 },
+            { id: 'lapampa', name: "La Pampa", capital: "Santa Rosa", top: "58%", left: "46%", scale: 1 },
+            { id: 'neuquen', name: "Neuquén", capital: "Neuquén", top: "63%", left: "33%", scale: 1 },
+            { id: 'rionegro', name: "Río Negro", capital: "Viedma", top: "67%", left: "43%", scale: 1 },
+            { id: 'chubut', name: "Chubut", capital: "Rawson", top: "76%", left: "38%", scale: 1 },
+            { id: 'santacruz', name: "Santa Cruz", capital: "Río Gallegos", top: "86%", left: "34%", scale: 1 },
+            { id: 'tierradelfuego', name: "Tierra del Fuego", short: "T. del Fuego", capital: "Ushuaia", top: "96%", left: "46%", scale: 1 }
+        ];
+
+        let provinces = [];
+        let isEditMode = false;
+        let selectedPinId = null;
+
+        // Estado de cada provincia para el juego
+        const state = {};
+        let currentProv = null;
+
+        // --- SISTEMA DE ARRASTRE PARA EDICIÓN ---
+        let isDragging = false;
+        let dragPinId = null;
+
+        function initData() {
+            // Cargar coordenadas guardadas si existen
+            const savedData = localStorage.getItem('provincesCoordsV2');
+            if (savedData) {
+                const parsedCoords = JSON.parse(savedData);
+                provinces = defaultProvinces.map(dp => {
+                    const saved = parsedCoords.find(s => s.id === dp.id);
+                    return saved ? { ...dp, top: saved.top, left: saved.left, scale: saved.scale || 1 } : dp;
+                });
+            } else {
+                provinces = JSON.parse(JSON.stringify(defaultProvinces));
+            }
+
+            provinces.forEach(p => {
+                state[p.id] = { step: 0, statusName: 'none', statusCap: 'none' };
+            });
+        }
+
+        function toggleEditMode() {
+            isEditMode = true;
+            selectedPinId = null;
+            document.getElementById('edit-bar').classList.remove('hidden');
+            document.getElementById('size-controls').classList.add('hidden');
+            renderPins();
+        }
+
+        function saveEditMode() {
+            isEditMode = false;
+            selectedPinId = null;
+            document.getElementById('edit-bar').classList.add('hidden');
+            
+            // Guardar en LocalStorage
+            const coordsToSave = provinces.map(p => ({ id: p.id, top: p.top, left: p.left, scale: p.scale }));
+            localStorage.setItem('provincesCoordsV2', JSON.stringify(coordsToSave));
+            
+            renderPins();
+        }
+
+        function selectPinForEdit(id) {
+            if (!isEditMode) return;
+            selectedPinId = id;
+            document.getElementById('size-controls').classList.remove('hidden');
+            
+            // Efecto visual para pin seleccionado
+            document.querySelectorAll('.pin').forEach(p => p.classList.remove('selected-edit'));
+            document.getElementById(`pin-${id}`).classList.add('selected-edit');
+        }
+
+        function changeScale(delta) {
+            if (!selectedPinId || !isEditMode) return;
+            const prov = provinces.find(p => p.id === selectedPinId);
+            // Limitar escala entre 0.5 (mitad) y 2.5 (enorme)
+            prov.scale = Math.max(0.5, Math.min(2.5, (prov.scale || 1) + delta));
+            
+            const pin = document.getElementById(`pin-${selectedPinId}`);
+            pin.style.setProperty('--pin-scale', prov.scale);
+        }
+
+        // Eventos Globales para arrastre
+        document.addEventListener('mousemove', onDrag, { passive: false });
+        document.addEventListener('touchmove', onDrag, { passive: false });
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+
+        function startDrag(e, id) {
+            if (!isEditMode) return;
+            isDragging = true;
+            dragPinId = id;
+            
+            selectPinForEdit(id);
+            
+            const pin = document.getElementById(`pin-${id}`);
+            pin.classList.add('dragging');
+            
+            if (e.cancelable) e.preventDefault();
+        }
+
+        function onDrag(e) {
+            if (!isDragging || !dragPinId) return;
+            if (e.cancelable) e.preventDefault(); 
+
+            const container = document.getElementById('pins-container');
+            const rect = container.getBoundingClientRect();
+            
+            let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+
+            let x = clientX - rect.left;
+            let y = clientY - rect.top;
+
+            x = Math.max(0, Math.min(x, rect.width));
+            y = Math.max(0, Math.min(y, rect.height));
+
+            const percentX = (x / rect.width) * 100;
+            const percentY = (y / rect.height) * 100;
+
+            const pin = document.getElementById(`pin-${dragPinId}`);
+            pin.style.left = `${percentX}%`;
+            pin.style.top = `${percentY}%`;
+        }
+
+        function stopDrag() {
+            if (isDragging && dragPinId) {
+                const pin = document.getElementById(`pin-${dragPinId}`);
+                pin.classList.remove('dragging');
+                
+                const prov = provinces.find(p => p.id === dragPinId);
+                prov.left = pin.style.left;
+                prov.top = pin.style.top;
+            }
+            isDragging = false;
+            dragPinId = null;
+        }
+
+        // --- RENDERIZADO ---
+        function renderPins() {
+            const container = document.getElementById('pins-container');
+            container.innerHTML = ''; 
+
+            provinces.forEach(prov => {
+                const s = state[prov.id];
+                const btn = document.createElement('div');
+                btn.id = `pin-${prov.id}`;
+                
+                btn.style.top = prov.top;
+                btn.style.left = prov.left;
+                // Aplicar escala a variable de CSS
+                btn.style.setProperty('--pin-scale', prov.scale || 1);
+
+                if (isEditMode) {
+                    btn.className = `pin editing edit-mode-pin ${selectedPinId === prov.id ? 'selected-edit' : ''}`;
+                    btn.innerText = prov.short || prov.name;
+                    
+                    btn.onmousedown = (e) => startDrag(e, prov.id);
+                    btn.ontouchstart = (e) => startDrag(e, prov.id);
+                } else {
+                    if (s.step === 0) {
+                        btn.className = 'pin pending';
+                        btn.innerText = '❓';
+                    } else if (s.step === 1) {
+                        btn.className = `pin answered ${s.statusName === 'correct' ? 'name-correct' : 'name-incorrect'}`;
+                        btn.innerText = prov.short || prov.name;
+                    } else {
+                        btn.className = `pin answered ${s.statusCap === 'correct' ? 'cap-correct' : 'cap-incorrect'}`;
+                        btn.innerHTML = `${prov.short || prov.name}<br><span class="text-xs font-normal opacity-90">${prov.capital}</span>`;
+                        btn.style.textAlign = 'center';
+                        btn.style.lineHeight = '1.1';
+                    }
+                    btn.onclick = () => handlePinClick(prov.id);
+                }
+
+                container.appendChild(btn);
+            });
+        }
+
+        // --- LÓGICA DEL JUEGO ---
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function getOptions(type, correctValue) {
+            const allValues = provinces.map(p => type === 'name' ? p.name : p.capital);
+            const uniqueValues = [...new Set(allValues)]; 
+            const wrongValues = uniqueValues.filter(v => v !== correctValue);
+            shuffle(wrongValues);
+            
+            const options = [correctValue, wrongValues[0], wrongValues[1]];
+            return shuffle(options);
+        }
+
+        function handlePinClick(provId) {
+            if (isEditMode) return; 
+            
+            const prov = provinces.find(p => p.id === provId);
+            const s = state[provId];
+            currentProv = prov;
+
+            if (s.step === 0) {
+                const opts = getOptions('name', prov.name);
+                showModal('🗺️', '¿Qué provincia es?', opts, 'bg-blue-500', 'name');
+            } else if (s.step === 1) {
+                const opts = getOptions('capital', prov.capital);
+                showModal('🏛️', `Capital de ${prov.name}`, opts, 'bg-orange-500', 'capital');
+            } else {
+                showFeedback('🏆', '¡Ya ganaste esta!', 'text-yellow-500');
+            }
+        }
+
+        function showModal(emoji, title, options, colorClass, type) {
+            document.getElementById('modal-icon').innerText = emoji;
+            document.getElementById('modal-title').innerText = title;
+            
+            const header = document.getElementById('modal-header');
+            header.className = `${colorClass} p-6 text-center relative overflow-hidden`;
+
+            const container = document.getElementById('modal-options');
+            container.innerHTML = '';
+
+            options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-option w-full py-4 px-6 bg-white border-blue-200 border-2 border-b-4 text-blue-700 font-bold rounded-2xl text-xl flex items-center justify-between shadow-sm hover:bg-blue-50';
+                const prefix = ['1️⃣', '2️⃣', '3️⃣'][index];
+                btn.innerHTML = `<span>${prefix} &nbsp; ${opt}</span>`;
+                btn.onclick = () => processAnswer(opt, type);
+                container.appendChild(btn);
+            });
+
+            document.getElementById('modal-backdrop').classList.remove('hidden-modal');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-backdrop').classList.add('hidden-modal');
+        }
+
+        function processAnswer(selectedOption, type) {
+            closeModal();
+            const s = state[currentProv.id];
+            
+            let isCorrect = false;
+            if (type === 'name') {
+                isCorrect = (selectedOption === currentProv.name);
+                s.statusName = isCorrect ? 'correct' : 'incorrect';
+                s.step = 1;
+            } else {
+                isCorrect = (selectedOption === currentProv.capital);
+                s.statusCap = isCorrect ? 'correct' : 'incorrect';
+                s.step = 2;
+            }
+
+            if (isCorrect) {
+                confetti({
+                    particleCount: 80, // Ligeramente reducido para rendimiento
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#4ade80', '#fbbf24', '#60a5fa']
+                });
+                showFeedback('🎉', '¡GENIAL!', 'text-green-500');
+            } else {
+                const pin = document.getElementById(`pin-${currentProv.id}`);
+                if(pin) pin.classList.add('shake');
+                setTimeout(() => pin && pin.classList.remove('shake'), 400);
+                
+                showFeedback('😅', '¡Uy! Era: ' + (type==='name' ? currentProv.name : currentProv.capital), 'text-red-500');
+            }
+
+            renderPins();
+        }
+
+        function showFeedback(emoji, text, textColorClass) {
+            const overlay = document.getElementById('feedback-overlay');
+            const card = document.getElementById('feedback-card');
+            
+            document.getElementById('feedback-emoji').innerText = emoji;
+            const titleEl = document.getElementById('feedback-text');
+            titleEl.className = `text-3xl font-extrabold ${textColorClass}`;
+            titleEl.innerText = text;
+
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-50');
+            card.classList.add('scale-100');
+
+            setTimeout(() => {
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                card.classList.remove('scale-100');
+                card.classList.add('scale-50');
+            }, 1500); // Reducido ligeramente para más fluidez
+        }
+
+        // Inicializar
+        window.onload = () => {
+            initData();
+            renderPins();
+        };
+
+    </script>
+</body>
+</html>
