@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#2f80ed" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Tablas de Multiplicar para Honorio</title>
+  <style>
+    :root{
+      --bg1:#f7fbff;
+      --bg2:#eef7ff;
+      --card:#ffffff;
+      --text:#183153;
+      --muted:#5f728c;
+      --ok:#198754;
+      --bad:#dc3545;
+      --accent:#2f80ed;
+      --accent-2:#56ccf2;
+      --shadow:0 10px 30px rgba(24,49,83,.12);
+      --radius:22px;
+      --key:#f4f8ff;
+      --key-border:#d7e5f5;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html{
+      height:100%;
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    }
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      min-height:100vh;
+      min-height:100dvh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      padding-top:max(14px, env(safe-area-inset-top));
+      padding-right:max(14px, env(safe-area-inset-right));
+      padding-bottom:max(14px, env(safe-area-inset-bottom));
+      padding-left:max(14px, env(safe-area-inset-left));
+      overflow-x:hidden;
+      overscroll-behavior:none;
+      touch-action:manipulation;
+      -webkit-text-size-adjust:100%;
+    }
+    .app{
+      width:min(980px,100%);
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .header{
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      color:white;
+      padding:20px;
+      text-align:center;
+      position:relative;
+    }
+    .header h1{
+      margin:0 0 8px;
+      font-size:clamp(1.5rem,4vw,2.4rem);
+    }
+    .header p{
+      margin:0;
+      font-size:.98rem;
+      opacity:.95;
+    }
+    .top-bar{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .pill{
+      display:inline-block;
+      background:rgba(255,255,255,.2);
+      border:1px solid rgba(255,255,255,.28);
+      padding:6px 12px;
+      border-radius:999px;
+      font-weight:bold;
+    }
+    .hearts{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      justify-content:center;
+    }
+    .heart{
+      font-size:1.4rem;
+      filter:drop-shadow(0 2px 4px rgba(0,0,0,.15));
+      transition:transform .2s ease, opacity .2s ease;
+    }
+    .heart.lost{
+      opacity:.25;
+      transform:scale(.9);
+      filter:none;
+    }
+    .content{
+      display:grid;
+      grid-template-columns: 300px 1fr;
+      gap:18px;
+      padding:18px;
+    }
+    .panel, .game{
+      background:#fff;
+      border:1px solid #e7eef6;
+      border-radius:20px;
+      padding:16px;
+    }
+    .panel h2, .game h2{
+      margin-top:0;
+      font-size:1.15rem;
+    }
+    .row{ margin-bottom:12px; }
+    label{
+      display:block;
+      margin-bottom:6px;
+      font-weight:bold;
+    }
+    select, input[type="text"]{
+      width:100%;
+      min-height:48px;
+      padding:12px 14px;
+      border:1px solid #cdd9e6;
+      border-radius:14px;
+      font-size:16px;
+      background:#fff;
+      appearance:none;
+      -webkit-appearance:none;
+    }
+    .check-group{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:8px;
+    }
+    .check{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background:#f7fbff;
+      border:1px solid #dde9f5;
+      padding:10px 12px;
+      border-radius:14px;
+      margin-bottom:0;
+      font-weight:normal;
+      user-select:none;
+    }
+    .check input{
+      width:18px;
+      height:18px;
+      accent-color:var(--accent);
+      flex:0 0 auto;
+    }
+    button{
+      border:none;
+      border-radius:16px;
+      padding:12px 16px;
+      min-height:48px;
+      font-size:16px;
+      font-weight:bold;
+      cursor:pointer;
+      transition:transform .06s ease, opacity .2s ease;
+      touch-action:manipulation;
+    }
+    button:active{transform:scale(.98)}
+    .primary{ background:var(--accent); color:white; width:100%; }
+    .secondary{ background:#eef5ff; color:var(--text); width:100%; }
+
+    .stats{
+      display:grid;
+      grid-template-columns: repeat(6,1fr);
+      gap:8px;
+      margin:10px 0;
+    }
+    .stat{
+      background:#f7fbff;
+      border:1px solid #dde9f5;
+      border-radius:14px;
+      padding:9px 6px;
+      text-align:center;
+    }
+    .stat .n{
+      font-size:1.15rem;
+      font-weight:bold;
+    }
+
+    .question-box{
+      text-align:center;
+      padding:14px 12px;
+      background:linear-gradient(180deg,#f8fbff,#eef6ff);
+      border-radius:18px;
+      margin-bottom:10px;
+      min-height:125px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+    }
+    .question{
+      font-size:clamp(2rem,8vw,4rem);
+      font-weight:bold;
+      letter-spacing:.5px;
+      margin:10px 0 12px;
+    }
+    .feedback{
+      min-height:28px;
+      font-weight:bold;
+      font-size:1.05rem;
+    }
+    .ok{color:var(--ok)}
+    .bad{color:var(--bad)}
+    .muted{color:var(--muted)}
+
+    .answer-screen{
+      width:100%;
+      padding:10px;
+      border:2px solid #d7e5f5;
+      border-radius:16px;
+      text-align:center;
+      font-size:1.5rem;
+      font-weight:bold;
+      margin-bottom:8px;
+      min-height:52px;
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .action-row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .keypad{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:8px;
+      margin-bottom:8px;
+    }
+    .key{
+      background:var(--key);
+      border:1px solid var(--key-border);
+      min-height:52px;
+      font-size:1.2rem;
+      border-radius:16px;
+      width:100%;
+      padding:8px;
+    }
+    .key.action{
+      font-size:1rem;
+    }
+
+    .history{
+      margin-top:14px;
+      background:#fbfdff;
+      border:1px solid #e7eef6;
+      border-radius:18px;
+      padding:14px;
+      max-height:180px;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .history h3{
+      margin-top:0;
+      margin-bottom:10px;
+      font-size:1rem;
+    }
+    .history-item{
+      padding:8px 10px;
+      border-radius:12px;
+      margin-bottom:8px;
+      font-size:.98rem;
+    }
+    .history-item.ok{background:#eaf8ef}
+    .history-item.bad{background:#fdebec}
+
+    .footer-note{
+      margin-top:10px;
+      font-size:.92rem;
+      color:var(--muted);
+      text-align:center;
+    }
+
+    .question-timer-warning{
+      animation:pulseWarn .65s infinite alternate;
+    }
+    @keyframes pulseWarn{
+      from{ transform:scale(1); }
+      to{ transform:scale(1.08); }
+    }
+
+    .confetti{
+      position:fixed;
+      top:-10px;
+      width:12px;
+      height:18px;
+      pointer-events:none;
+      z-index:9999;
+      opacity:.95;
+      border-radius:3px;
+      animation:fall linear forwards;
+    }
+    @keyframes fall{
+      0%{ transform:translateY(0) rotate(0deg); opacity:1; }
+      100%{ transform:translateY(110vh) rotate(720deg); opacity:.9; }
+    }
+
+    @media (max-width: 820px){
+      body{
+        padding:0;
+        padding-top:env(safe-area-inset-top);
+        padding-right:env(safe-area-inset-right);
+        padding-bottom:env(safe-area-inset-bottom);
+        padding-left:env(safe-area-inset-left);
+        align-items:flex-start;
+      }
+      .app{
+        width:100%;
+        border-radius:0;
+        min-height:100vh;
+        min-height:100dvh;
+      }
+      .header{
+        padding:14px 12px;
+      }
+      .header h1{
+        font-size:1.45rem;
+        margin-bottom:6px;
+      }
+      .header p{
+        font-size:.9rem;
+      }
+      .top-bar{
+        margin-top:8px;
+        gap:8px;
+      }
+      .pill{
+        padding:5px 10px;
+        font-size:.9rem;
+      }
+      .content{
+        grid-template-columns:1fr;
+        padding:10px;
+        gap:10px;
+      }
+      .panel{
+        order:2;
+        padding:12px;
+      }
+      .game{
+        order:1;
+        padding:12px;
+      }
+      .stats{
+        grid-template-columns: repeat(3,1fr);
+        gap:6px;
+      }
+      .stat{
+        padding:7px 4px;
+        border-radius:12px;
+      }
+      .stat .n{
+        font-size:1rem;
+      }
+      .stat div:last-child{
+        font-size:.72rem;
+      }
+      .question-box{
+        min-height:110px;
+        padding:10px 8px;
+        margin-bottom:8px;
+      }
+      .question{
+        font-size:2rem;
+        margin:6px 0 8px;
+      }
+      .feedback{
+        font-size:.95rem;
+        min-height:22px;
+      }
+      .answer-screen{
+        min-height:46px;
+        font-size:1.35rem;
+        padding:8px;
+        margin-bottom:8px;
+      }
+      .action-row{
+        gap:6px;
+        margin-bottom:8px;
+      }
+      .action-row button{
+        padding:10px 10px;
+        font-size:16px;
+      }
+      .keypad{
+        gap:6px;
+        margin-bottom:6px;
+      }
+      .key{
+        min-height:48px;
+        font-size:1.05rem;
+        border-radius:14px;
+        padding:6px;
+      }
+      .history{
+        max-height:110px;
+        margin-top:8px;
+        padding:10px;
+      }
+      .history h3{
+        margin-bottom:8px;
+        font-size:.92rem;
+      }
+      .history-item{
+        font-size:.88rem;
+        padding:6px 8px;
+        margin-bottom:6px;
+      }
+      .footer-note{
+        font-size:.82rem;
+        margin-top:6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h1>🌟 Tablas de Multiplicar de Honorio 🌟</h1>
+      <p>Elegí las tablas, resolvé las cuentas y tratá de ganar antes de quedarte sin vidas.</p>
+      <div class="top-bar">
+        <div class="pill" id="modeLabel">Modo: práctica</div>
+        <div class="pill hearts" id="heartsBar" aria-label="Vidas">
+          <span class="heart">❤️</span>
+          <span class="heart">❤️</span>
+          <span class="heart">❤️</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="panel">
+        <h2>Configuración</h2>
+
+        <div class="row">
+          <label for="name">Nombre</label>
+          <input id="name" type="text" value="Honorio" autocomplete="nickname" />
+        </div>
+
+        <div class="row">
+          <label>Tablas para practicar</label>
+          <div class="check-group" id="tablesWrap"></div>
+        </div>
+
+        <div class="row">
+          <label for="questionCount">Cantidad de preguntas</label>
+          <select id="questionCount">
+            <option value="10">10</option>
+            <option value="15" selected>15</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="maxMultiplier">Multiplicar hasta</label>
+          <select id="maxMultiplier">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="12">12</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="mode">Modo</label>
+          <select id="mode">
+            <option value="practice" selected>Práctica normal</option>
+            <option value="race">Carrera contra el tiempo</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="timeLimit">Tiempo (solo carrera)</label>
+          <select id="timeLimit">
+            <option value="30">30 segundos</option>
+            <option value="60" selected>60 segundos</option>
+            <option value="90">90 segundos</option>
+            <option value="120">120 segundos</option>
+          </select>
+        </div>
+
+        <button class="primary" id="startBtn">Empezar</button>
+        <div style="height:10px"></div>
+        <button class="secondary" id="selectAllBtn">Marcar todas</button>
+        <div class="footer-note">Ahora queda mucho más amigable con iPhone, sin pelearse con Safari a cada toque.</div>
+      </div>
+
+      <div class="game">
+        <h2 id="welcome">¡Vamos, campeón! 💪</h2>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="n" id="score">0</div>
+            <div>Puntos</div>
+          </div>
+          <div class="stat">
+            <div class="n" id="correct">0</div>
+            <div>Bien</div>
+          </div>
+          <div class="stat">
+            <div class="n" id="wrong">0</div>
+            <div>Mal</div>
+          </div>
+          <div class="stat">
+            <div class="n" id="timer">—</div>
+            <div>Tiempo total</div>
+          </div>
+          <div class="stat">
+            <div class="n" id="lives">3</div>
+            <div>Vidas</div>
+          </div>
+          <div class="stat">
+            <div class="n" id="questionTimer">10s</div>
+            <div>Cuenta atrás</div>
+          </div>
+        </div>
+
+        <div class="question-box">
+          <div class="muted">Cuenta actual</div>
+          <div class="question" id="question">Presioná “Empezar”</div>
+          <div class="feedback" id="feedback"></div>
+        </div>
+
+        <div class="answer-screen" id="answerScreen">—</div>
+
+        <div class="action-row">
+          <button class="primary" id="checkBtn">Responder</button>
+          <button class="secondary" id="nextBtn">Siguiente</button>
+        </div>
+
+        <div class="keypad" id="keypad">
+          <button class="key" type="button">1</button>
+          <button class="key" type="button">2</button>
+          <button class="key" type="button">3</button>
+          <button class="key" type="button">4</button>
+          <button class="key" type="button">5</button>
+          <button class="key" type="button">6</button>
+          <button class="key" type="button">7</button>
+          <button class="key" type="button">8</button>
+          <button class="key" type="button">9</button>
+          <button class="key action" type="button" data-action="clear">Borrar</button>
+          <button class="key" type="button">0</button>
+          <button class="key action" type="button" data-action="del">⌫</button>
+        </div>
+
+        <div class="history">
+          <h3>Últimas respuestas</h3>
+          <div id="historyList" class="muted">Todavía no hay respuestas.</div>
+        </div>
+
+        <div class="footer-note" id="statusText">Elegí la configuración y arrancá.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'tablas_honorio_v4_config';
+
+    const tablesWrap = document.getElementById('tablesWrap');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const startBtn = document.getElementById('startBtn');
+    const checkBtn = document.getElementById('checkBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const questionEl = document.getElementById('question');
+    const feedbackEl = document.getElementById('feedback');
+    const scoreEl = document.getElementById('score');
+    const correctEl = document.getElementById('correct');
+    const wrongEl = document.getElementById('wrong');
+    const timerEl = document.getElementById('timer');
+    const livesEl = document.getElementById('lives');
+    const questionTimerEl = document.getElementById('questionTimer');
+    const historyList = document.getElementById('historyList');
+    const statusText = document.getElementById('statusText');
+    const welcome = document.getElementById('welcome');
+    const modeLabel = document.getElementById('modeLabel');
+    const heartsBar = document.getElementById('heartsBar');
+    const answerScreen = document.getElementById('answerScreen');
+    const keypad = document.getElementById('keypad');
+    const nameInput = document.getElementById('name');
+    const questionCountSelect = document.getElementById('questionCount');
+    const maxMultiplierSelect = document.getElementById('maxMultiplier');
+    const modeSelect = document.getElementById('mode');
+    const timeLimitSelect = document.getElementById('timeLimit');
+
+    for (let i = 1; i <= 10; i++) {
+      const div = document.createElement('label');
+      div.className = 'check';
+      div.innerHTML = `<input type="checkbox" value="${i}" ${i <= 5 ? 'checked' : ''}> Tabla del ${i}`;
+      tablesWrap.appendChild(div);
+    }
+
+    let state = {
+      selectedTables: [1,2,3,4,5],
+      questionCount: 15,
+      maxMultiplier: 10,
+      mode: 'practice',
+      timeLimit: 60,
+      score: 0,
+      correct: 0,
+      wrong: 0,
+      lives: 3,
+      currentA: null,
+      currentB: null,
+      answeredCurrent: false,
+      asked: 0,
+      timer: null,
+      timeLeft: 0,
+      active: false,
+      answerText: '',
+      perQuestionLimit: 10,
+      questionTimeLeft: 10,
+      questionTimer: null
+    };
+
+    function vibrate(pattern = 35) {
+      if (navigator.vibrate) navigator.vibrate(pattern);
+    }
+
+    function saveConfig() {
+      const payload = {
+        name: nameInput.value,
+        questionCount: questionCountSelect.value,
+        maxMultiplier: maxMultiplierSelect.value,
+        mode: modeSelect.value,
+        timeLimit: timeLimitSelect.value,
+        tables: [...tablesWrap.querySelectorAll('input')].map(i => ({ value: i.value, checked: i.checked }))
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (error) {
+      }
+    }
+
+    function loadConfig() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const cfg = JSON.parse(raw);
+        if (cfg.name) nameInput.value = cfg.name;
+        if (cfg.questionCount) questionCountSelect.value = cfg.questionCount;
+        if (cfg.maxMultiplier) maxMultiplierSelect.value = cfg.maxMultiplier;
+        if (cfg.mode) modeSelect.value = cfg.mode;
+        if (cfg.timeLimit) timeLimitSelect.value = cfg.timeLimit;
+        if (Array.isArray(cfg.tables)) {
+          cfg.tables.forEach(saved => {
+            const input = tablesWrap.querySelector(`input[value="${saved.value}"]`);
+            if (input) input.checked = !!saved.checked;
+          });
+        }
+      } catch (error) {
+      }
+    }
+
+    function syncSelectAllLabel() {
+      const checks = tablesWrap.querySelectorAll('input[type="checkbox"]');
+      const allChecked = [...checks].every(c => c.checked);
+      selectAllBtn.textContent = allChecked ? 'Desmarcar todas' : 'Marcar todas';
+    }
+
+    function readConfig() {
+      state.selectedTables = [...tablesWrap.querySelectorAll('input:checked')].map(i => Number(i.value));
+      state.questionCount = Number(questionCountSelect.value);
+      state.maxMultiplier = Number(maxMultiplierSelect.value);
+      state.mode = modeSelect.value;
+      state.timeLimit = Number(timeLimitSelect.value);
+      modeLabel.textContent = `Modo: ${state.mode === 'practice' ? 'práctica' : 'carrera'}`;
+      saveConfig();
+      syncSelectAllLabel();
+    }
+
+    function resetGame() {
+      state.score = 0;
+      state.correct = 0;
+      state.wrong = 0;
+      state.lives = 3;
+      state.currentA = null;
+      state.currentB = null;
+      state.answeredCurrent = false;
+      state.asked = 0;
+      state.active = true;
+      state.answerText = '';
+      clearInterval(state.timer);
+      clearInterval(state.questionTimer);
+      state.timeLeft = state.mode === 'race' ? state.timeLimit : 0;
+      state.questionTimeLeft = state.perQuestionLimit;
+      historyList.innerHTML = '';
+      historyList.classList.add('muted');
+      historyList.textContent = 'Todavía no hay respuestas.';
+      renderStats();
+      updateAnswerScreen();
+      updateHearts();
+    }
+
+    function renderStats() {
+      scoreEl.textContent = state.score;
+      correctEl.textContent = state.correct;
+      wrongEl.textContent = state.wrong;
+      livesEl.textContent = state.lives;
+      timerEl.textContent = state.mode === 'race' ? `${state.timeLeft}s` : '—';
+      questionTimerEl.textContent = `${state.questionTimeLeft}s`;
+      questionTimerEl.classList.toggle('question-timer-warning', state.questionTimeLeft <= 3 && state.active);
+    }
+
+    function updateAnswerScreen() {
+      answerScreen.textContent = state.answerText === '' ? '—' : state.answerText;
+    }
+
+    function updateHearts() {
+      heartsBar.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const span = document.createElement('span');
+        span.className = 'heart' + (i > state.lives ? ' lost' : '');
+        span.textContent = '❤️';
+        heartsBar.appendChild(span);
+      }
+    }
+
+    function randomFrom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function startQuestionTimer() {
+      clearInterval(state.questionTimer);
+      state.questionTimeLeft = state.perQuestionLimit;
+      renderStats();
+      state.questionTimer = setInterval(() => {
+        if (!state.active) return;
+        state.questionTimeLeft--;
+        renderStats();
+        if (state.questionTimeLeft <= 0) {
+          clearInterval(state.questionTimer);
+          if (!state.answeredCurrent && state.currentA !== null) {
+            const result = state.currentA * state.currentB;
+            state.answeredCurrent = true;
+            addHistory(`${state.currentA} × ${state.currentB} = tiempo agotado ✘ (era ${result})`, false);
+            feedbackEl.textContent = `⏰ Tiempo agotado. Era ${result}.`;
+            feedbackEl.className = 'feedback bad';
+            vibrate([80, 40, 80]);
+            loseLife(`⏰ Tiempo agotado. Era ${result}.`);
+            if (state.active) {
+              setTimeout(nextQuestion, 700);
+            }
+          }
+        }
+      }, 1000);
+    }
+
+    function nextQuestion() {
+      if (!state.active) return;
+
+      if (state.mode === 'practice' && state.asked >= state.questionCount) {
+        endGame();
+        return;
+      }
+
+      state.currentA = randomFrom(state.selectedTables);
+      state.currentB = Math.floor(Math.random() * state.maxMultiplier) + 1;
+      state.answeredCurrent = false;
+      state.asked++;
+      state.answerText = '';
+      updateAnswerScreen();
+      questionEl.textContent = `${state.currentA} × ${state.currentB} = ?`;
+      feedbackEl.textContent = '';
+      feedbackEl.className = 'feedback';
+      statusText.textContent = state.mode === 'practice'
+        ? `Pregunta ${Math.min(state.asked, state.questionCount)} de ${state.questionCount}`
+        : `Respondé lo más rápido posible antes de que termine el tiempo.`;
+      startQuestionTimer();
+    }
+
+    function addHistory(text, ok) {
+      if (historyList.classList.contains('muted')) {
+        historyList.classList.remove('muted');
+        historyList.innerHTML = '';
+      }
+      const div = document.createElement('div');
+      div.className = `history-item ${ok ? 'ok' : 'bad'}`;
+      div.textContent = text;
+      historyList.prepend(div);
+    }
+
+    function confettiBurst() {
+      const pieces = 28;
+      for (let i = 0; i < pieces; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.background = ['#ff4d6d','#ffd166','#06d6a0','#118ab2','#8338ec','#ff9f1c'][Math.floor(Math.random() * 6)];
+        p.style.animationDuration = (1.8 + Math.random() * 1.6) + 's';
+        p.style.transform = `translateY(0) rotate(${Math.random() * 360}deg)`;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 3600);
+      }
+    }
+
+    function loseLife(reasonText) {
+      state.wrong++;
+      state.lives--;
+      renderStats();
+      updateHearts();
+      if (state.lives <= 0) {
+        feedbackEl.textContent = reasonText;
+        feedbackEl.className = 'feedback bad';
+        endGame(true);
+      }
+    }
+
+    function checkAnswer() {
+      if (!state.active || state.currentA === null) return;
+      if (state.answeredCurrent) return;
+
+      if (state.answerText === '') {
+        feedbackEl.textContent = 'Marcá una respuesta.';
+        feedbackEl.className = 'feedback bad';
+        vibrate(35);
+        return;
+      }
+
+      const user = Number(state.answerText);
+      const result = state.currentA * state.currentB;
+      state.answeredCurrent = true;
+
+      clearInterval(state.questionTimer);
+
+      if (user === result) {
+        state.correct++;
+        state.score += 10;
+        feedbackEl.textContent = '¡Muy bien! ✅';
+        feedbackEl.className = 'feedback ok';
+        addHistory(`${state.currentA} × ${state.currentB} = ${user} ✔`, true);
+        vibrate(45);
+        confettiBurst();
+        renderStats();
+
+        if (state.mode === 'practice') {
+          if (state.asked >= state.questionCount) setTimeout(() => endGame(false), 600);
+        } else {
+          setTimeout(nextQuestion, 500);
+        }
+      } else {
+        feedbackEl.textContent = `No, era ${result} ❌`;
+        feedbackEl.className = 'feedback bad';
+        addHistory(`${state.currentA} × ${state.currentB} = ${user} ✘ (era ${result})`, false);
+        vibrate([80, 40, 80]);
+        loseLife(`No, era ${result} ❌`);
+        if (state.active) {
+          setTimeout(nextQuestion, 700);
+        }
+      }
+    }
+
+    function endGame(noLives = false) {
+      state.active = false;
+      clearInterval(state.timer);
+      clearInterval(state.questionTimer);
+      const name = nameInput.value.trim() || 'Campeón';
+      questionEl.textContent = '¡Juego terminado!';
+      let msg = `${name}, hiciste ${state.correct} bien y ${state.wrong} mal.`;
+
+      if (noLives) {
+        msg += ' Se acabaron las vidas.';
+      } else if (state.correct > state.wrong) {
+        msg += ' Tremendo.';
+      } else if (state.correct === 0 && state.wrong === 0) {
+        msg += ' Bueno... por lo menos abriste el juego.';
+      } else {
+        msg += ' A practicar un poco más y sale.';
+      }
+
+      feedbackEl.textContent = msg;
+      feedbackEl.className = noLives ? 'feedback bad' : 'feedback ok';
+      statusText.textContent = 'Podés cambiar la configuración y volver a empezar.';
+      welcome.textContent = `Resultado de ${name}`;
+      state.answerText = '';
+      updateAnswerScreen();
+    }
+
+    function startRaceTimer() {
+      clearInterval(state.timer);
+      renderStats();
+      state.timer = setInterval(() => {
+        state.timeLeft--;
+        renderStats();
+        if (state.timeLeft <= 0) {
+          clearInterval(state.timer);
+          endGame(false);
+        }
+      }, 1000);
+    }
+
+    function appendDigit(d) {
+      if (!state.active) return;
+      if (state.answeredCurrent) return;
+      if (state.answerText.length >= 3) return;
+      if (state.answerText === '0') state.answerText = d;
+      else state.answerText += d;
+      updateAnswerScreen();
+    }
+
+    function clearAnswer() {
+      if (!state.active) return;
+      state.answerText = '';
+      updateAnswerScreen();
+    }
+
+    function backspaceAnswer() {
+      if (!state.active) return;
+      state.answerText = state.answerText.slice(0, -1);
+      updateAnswerScreen();
+    }
+
+    keypad.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      if (action === 'clear') return clearAnswer();
+      if (action === 'del') return backspaceAnswer();
+      appendDigit(btn.textContent.trim());
+    });
+
+    keypad.addEventListener('touchstart', (e) => {
+      const btn = e.target.closest('button');
+      if (btn) btn.blur();
+    }, { passive: true });
+
+    startBtn.addEventListener('click', () => {
+      readConfig();
+
+      if (state.selectedTables.length === 0) {
+        alert('Elegí al menos una tabla.');
+        return;
+      }
+
+      resetGame();
+      const name = nameInput.value.trim() || 'Honorio';
+      welcome.textContent = `¡Dale, ${name}!`;
+      if (state.mode === 'race') startRaceTimer();
+      nextQuestion();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    checkBtn.addEventListener('click', checkAnswer);
+
+    nextBtn.addEventListener('click', () => {
+      if (!state.active) return;
+      clearInterval(state.questionTimer);
+      if (!state.answeredCurrent && state.currentA !== null) {
+        const result = state.currentA * state.currentB;
+        addHistory(`${state.currentA} × ${state.currentB} = sin responder ✘ (era ${result})`, false);
+        feedbackEl.textContent = `Saltada. Era ${result}.`;
+        feedbackEl.className = 'feedback bad';
+        vibrate([80, 40, 80]);
+        loseLife(`Saltada. Era ${result}.`);
+      }
+      if (state.active) setTimeout(nextQuestion, 350);
+    });
+
+    selectAllBtn.addEventListener('click', () => {
+      const checks = tablesWrap.querySelectorAll('input[type="checkbox"]');
+      const allChecked = [...checks].every(c => c.checked);
+      checks.forEach(c => c.checked = !allChecked);
+      syncSelectAllLabel();
+      saveConfig();
+    });
+
+    modeSelect.addEventListener('change', () => {
+      modeLabel.textContent = `Modo: ${modeSelect.value === 'practice' ? 'práctica' : 'carrera'}`;
+      saveConfig();
+    });
+
+    [nameInput, questionCountSelect, maxMultiplierSelect, timeLimitSelect].forEach(el => {
+      el.addEventListener('change', saveConfig);
+      el.addEventListener('input', saveConfig);
+    });
+
+    tablesWrap.addEventListener('change', () => {
+      syncSelectAllLabel();
+      saveConfig();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!state.active) return;
+      if (/^\d$/.test(e.key)) appendDigit(e.key);
+      if (e.key === 'Backspace') backspaceAnswer();
+      if (e.key === 'Delete') clearAnswer();
+      if (e.key === 'Enter') checkAnswer();
+    });
+
+    loadConfig();
+    readConfig();
+    updateHearts();
+    updateAnswerScreen();
+    syncSelectAllLabel();
+  </script>
+</body>
+</html>
