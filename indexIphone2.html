@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prueba simple de archivos</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #dbe2ea;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(180deg, #eef3ff, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 1.6rem;
+    }
+
+    p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      font-size: 16px;
+      resize: vertical;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    button, label.file-btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: transform 0.06s ease, opacity 0.2s ease, background 0.2s ease;
+      user-select: none;
+    }
+
+    button:active, label.file-btn:active {
+      transform: scale(0.98);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .primary:hover {
+      background: var(--accent-2);
+    }
+
+    .secondary {
+      background: #eef2ff;
+      color: #1e3a8a;
+      border: 1px solid #c7d2fe;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .status {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 14px;
+      min-height: 46px;
+    }
+
+    .tip {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 520px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Prueba simple de archivos</h1>
+    <p>Escribí algo, guardalo dentro del navegador y también exportalo como archivo .txt. Ideal para probar en iPhone, Android o Windows.</p>
+
+    <textarea id="texto" placeholder="Escribí algo acá..."></textarea>
+
+    <div class="row">
+      <button class="primary" id="guardarLocal">Guardar en el navegador</button>
+      <button class="secondary" id="cargarLocal">Cargar lo guardado</button>
+      <button class="primary" id="exportarTxt">Exportar TXT</button>
+      <label class="file-btn secondary" for="importarTxt">Importar TXT</label>
+      <input type="file" id="importarTxt" accept=".txt,text/plain" />
+    </div>
+
+    <div class="status" id="estado">Listo para probar.</div>
+    <div class="tip">En iPhone, exportar desde un HTML local puede ser caprichoso. Por eso esta versión intenta primero compartir o guardar el archivo con la hoja de compartir de iOS y, si no puede, abre una vista alternativa.</div>
+  </main>
+
+  <script>
+    const texto = document.getElementById('texto');
+    const estado = document.getElementById('estado');
+    const KEY = 'prueba_simple_archivos_texto';
+
+    function setEstado(msg) {
+      estado.textContent = msg;
+    }
+
+    function cargarAutomatico() {
+      const valor = localStorage.getItem(KEY);
+      if (valor !== null) {
+        texto.value = valor;
+        setEstado('Se cargó automáticamente el texto guardado en este navegador.');
+      }
+    }
+
+    document.getElementById('guardarLocal').addEventListener('click', () => {
+      localStorage.setItem(KEY, texto.value);
+      setEstado('Texto guardado dentro del navegador.');
+    });
+
+    document.getElementById('cargarLocal').addEventListener('click', () => {
+      const valor = localStorage.getItem(KEY);
+      if (valor === null) {
+        setEstado('No había nada guardado todavía.');
+        return;
+      }
+      texto.value = valor;
+      setEstado('Texto cargado desde el navegador.');
+    });
+
+    document.getElementById('exportarTxt').addEventListener('click', async () => {
+      const contenido = texto.value || 'Archivo de prueba vacío.';
+      const nombre = 'prueba-archivos.txt';
+
+      try {
+        const archivo = new File([contenido], nombre, { type: 'text/plain;charset=utf-8' });
+
+        if (navigator.canShare && navigator.canShare({ files: [archivo] }) && navigator.share) {
+          await navigator.share({
+            files: [archivo],
+            title: 'Exportar TXT',
+            text: 'Guardar o compartir archivo de texto'
+          });
+          setEstado('Se abrió la hoja de compartir de iPhone para guardar o enviar el TXT.');
+          return;
+        }
+      } catch (error) {
+      }
+
+      try {
+        const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nombre;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+        setEstado('Se intentó exportar el TXT. Si no se descargó solo, revisá la hoja de compartir o la app Archivos.');
+      } catch (error) {
+        setEstado('No se pudo exportar el archivo en este dispositivo.');
+      }
+    });
+
+    document.getElementById('importarTxt').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        setEstado('No se seleccionó ningún archivo.');
+        return;
+      }
+
+      try {
+        const contenido = await file.text();
+        texto.value = contenido;
+        setEstado(`Archivo importado: ${file.name}`);
+      } catch (error) {
+        setEstado('No se pudo leer el archivo.');
+      }
+
+      e.target.value = '';
+    });
+
+    cargarAutomatico();
+  </script>
+</body>
+</html>
