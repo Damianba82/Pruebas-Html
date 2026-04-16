@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acelerador Multiformato</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
+        h2 { color: #1a73e8; margin-bottom: 1.5rem; }
+        .file-input { margin-bottom: 1.5rem; }
+        audio { width: 100%; margin: 1.5rem 0; border-radius: 8px; }
+        .controls { background: #f8f9fa; padding: 15px; border-radius: 12px; }
+        input[type="range"] { width: 100%; height: 15px; border-radius: 5px; background: #ddd; outline: none; margin: 10px 0; }
+        .speed-display { font-size: 1.5rem; font-weight: bold; color: #333; }
+        p { font-size: 0.9rem; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Reproductor Veloz</h2>
+    <p>Acepta MP3, MP4, WAV, OGG</p>
+    
+    <input type="file" id="upload" accept="audio/*,video/mp4" class="file-input">
+    
+    <audio id="audioPlayer" controls></audio>
+    
+    <div class="controls">
+        <label>Velocidad de reproducción</label>
+        <div class="speed-display"><span id="speedValue">1.0</span>x</div>
+        <input type="range" id="speed" min="0.5" max="3.0" step="0.1" value="1">
+    </div>
+    
+    <p style="margin-top: 15px;">Desliza para acelerar en tiempo real</p>
+</div>
+
+<script>
+    const audio = document.getElementById('audioPlayer');
+    const speedInput = document.getElementById('speed');
+    const speedValue = document.getElementById('speedValue');
+    const upload = document.getElementById('upload');
+
+    // Detectar carga de archivo (MP3 o MP4)
+    upload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            audio.src = url;
+            // Mantener la velocidad seleccionada al cambiar de archivo
+            audio.playbackRate = speedInput.value;
+        }
+    });
+
+    // Actualizar velocidad
+    speedInput.addEventListener('input', function() {
+        const val = speedInput.value;
+        audio.playbackRate = val;
+        speedValue.textContent = parseFloat(val).toFixed(1);
+    });
+</script>
+
+</body>
+</html>
