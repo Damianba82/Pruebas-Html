@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Intercambio de Figuritas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #f5f5f5;
+    }
+
+    header {
+      background: #1f1f1f;
+      padding: 14px;
+      text-align: center;
+      border-bottom: 2px solid #333;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      padding: 12px;
+      background: #181818;
+      border-bottom: 1px solid #333;
+    }
+
+    button, input, select {
+      font-size: 15px;
+      border-radius: 8px;
+      border: none;
+      padding: 10px 12px;
+    }
+
+    button {
+      cursor: pointer;
+      background: #ffd000;
+      color: #111;
+      font-weight: bold;
+    }
+
+    button.secondary {
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+    }
+
+    button.danger {
+      background: #d33;
+      color: white;
+    }
+
+    button.ok {
+      background: #20b15a;
+      color: white;
+    }
+
+    button.blue {
+      background: #2d7dff;
+      color: white;
+    }
+
+    section {
+      display: none;
+      padding: 14px;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    .panel {
+      background: #1b1b1b;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+
+    .hint {
+      color: #bbb;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      overflow: auto;
+      border: 1px solid #444;
+      background: #000;
+      border-radius: 10px;
+      margin-top: 12px;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 12px;
+      padding: 8px;
+      text-align: center;
+      position: relative;
+    }
+
+    .card.selected {
+      border: 3px solid #ffd000;
+      background: #333015;
+    }
+
+    .card img {
+      max-width: 100%;
+      height: 120px;
+      object-fit: contain;
+      background: #000;
+      border-radius: 8px;
+    }
+
+    .qty {
+      font-size: 18px;
+      font-weight: bold;
+      margin: 8px 0;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .small-btn {
+      padding: 7px 10px;
+      font-size: 14px;
+    }
+
+    .top-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .friend-item {
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #generatedImage {
+      max-width: 100%;
+      border: 1px solid #444;
+      border-radius: 10px;
+      background: white;
+      margin-top: 12px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #333;
+      border-radius: 999px;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .warning {
+      background: #362900;
+      border: 1px solid #8a6b00;
+      color: #ffd966;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Intercambio de Figuritas</h1>
+  </header>
+
+  <nav>
+    <button onclick="showSection('capture')">Cargar foto</button>
+    <button onclick="showSection('inventory')">Mis figuritas</button>
+    <button onclick="showSection('friends')">Amigos</button>
+    <button onclick="showSection('exchange')">Intercambiar</button>
+    <button onclick="showSection('history')">Historial</button>
+    <button class="secondary" onclick="exportBackup()">Exportar respaldo</button>
+    <button class="secondary" onclick="document.getElementById('importFile').click()">Importar respaldo</button>
+    <input id="importFile" type="file" accept=".json" hidden onchange="importBackup(event)">
+  </nav>
+
+  <section id="capture" class="active">
+    <div class="panel">
+      <h2>Cargar foto general</h2>
+      <p class="hint">
+        Cargá una foto donde estén las figuritas que querés cambiar.
+        En esta V1 las seleccionamos manualmente con rectángulos.
+        Más adelante este mismo módulo queda preparado para detección automática.
+      </p>
+
+      <div class="top-row">
+        <input id="photoInput" type="file" accept="image/*" capture="environment" onchange="loadPhoto(event)">
+        <button class="blue" onclick="autoDetectPlaceholder()">Detectar automático</button>
+        <button class="ok" onclick="savePendingStickers()">Guardar figuritas recortadas</button>
+        <button class="danger" onclick="clearPendingSelections()">Limpiar selección</button>
+      </div>
+
+      <div class="warning">
+        Modo actual: seleccioná cada figurita arrastrando con el dedo o mouse sobre la foto.
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="photoCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Figuritas detectadas / seleccionadas</h2>
+      <div id="pendingGrid" class="grid"></div>
+    </div>
+  </section>
+
+  <section id="inventory">
+    <div class="panel">
+      <h2>Mis figuritas disponibles</h2>
+      <p class="hint">
+        Acá están las figuritas que tenés para cambiar. Podés corregir cantidades o eliminar alguna.
+      </p>
+      <div id="inventoryGrid" class="grid"></div>
+    </div>
+  </section>
+
+  <section id="friends">
+    <div class="panel">
+      <h2>Amigos</h2>
+      <div class="top-row">
+        <input id="friendName" type="text" placeholder="Nombre del amigo">
+        <button onclick="addFriend()">Agregar amigo</button>
+      </div>
+      <div id="friendsList"></div>
+    </div>
+  </section>
+
+  <section id="exchange">
+    <div class="panel">
+      <h2>Intercambiar figuritas</h2>
+      <p class="hint">
+        Tocá una figurita para seleccionar cuántas vas a intercambiar.
+        Cada toque suma 1 hasta llegar a la cantidad disponible. Luego vuelve a 0.
+      </p>
+
+      <div class="top-row">
+        <select id="friendSelect"></select>
+        <button class="ok" onclick="finishExchange()">Listo: generar imagen</button>
+        <button class="danger" onclick="clearExchangeSelection()">Cancelar selección</button>
+      </div>
+
+      <div id="exchangeGrid" class="grid"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Imagen para enviar por WhatsApp</h2>
+      <p class="hint">
+        Después de generar la imagen, podés descargarla o compartirla. Si el navegador no deja adjuntarla directo a WhatsApp,
+        descargala y mandala manualmente.
+      </p>
+
+      <div class="top-row">
+        <button class="blue" onclick="downloadGeneratedImage()">Descargar imagen</button>
+        <button class="secondary" onclick="shareGeneratedImage()">Compartir imagen</button>
+        <button class="secondary" onclick="openWhatsAppText()">Abrir WhatsApp con texto</button>
+      </div>
+
+      <img id="generatedImage" alt="">
+    </div>
+  </section>
+
+  <section id="history">
+    <div class="panel">
+      <h2>Historial de intercambios</h2>
+      <div class="top-row">
+        <button class="danger" onclick="undoLastExchange()">Deshacer último intercambio</button>
+        <button class="secondary" onclick="clearHistory()">Borrar historial</button>
+      </div>
+      <div id="historyList"></div>
+    </div>
+  </section>
+
+  <script>
+    const STORAGE_KEY = "figuritas_app_v1";
+
+    let state = {
+      stickers: [],
+      friends: [],
+      exchanges: [],
+      lastExchangeUndo: null
+    };
+
+    let loadedImage = null;
+    let pendingSelections = [];
+    let isDragging = false;
+    let dragStart = null;
+    let currentRect = null;
+    let exchangeSelection = {};
+    let generatedImageData = null;
+
+    const photoCanvas = document.getElementById("photoCanvas");
+    const ctx = photoCanvas.getContext("2d");
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          state = JSON.parse(raw);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      renderAll();
+    }
+
+    function showSection(id) {
+      document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+
+      if (id === "inventory") renderInventory();
+      if (id === "friends") renderFriends();
+      if (id === "exchange") renderExchange();
+      if (id === "history") renderHistory();
+    }
+
+    function renderAll() {
+      renderPending();
+      renderInventory();
+      renderFriends();
+      renderFriendSelect();
+      renderExchange();
+      renderHistory();
+    }
+
+    function uid(prefix) {
+      return prefix + "_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+    }
+
+    function loadPhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const img = new Image();
+
+        img.onload = function() {
+          loadedImage = img;
+
+          const maxWidth = 1400;
+          const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+
+          photoCanvas.width = img.width * scale;
+          photoCanvas.height = img.height * scale;
+
+          redrawCanvas();
+        };
+
+        img.src = e.target.result;
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function redrawCanvas() {
+      if (!loadedImage) return;
+
+      ctx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
+      ctx.drawImage(loadedImage, 0, 0, photoCanvas.width, photoCanvas.height);
+
+      pendingSelections.forEach(rect => {
+        drawRect(rect, "#20b15a");
+      });
+
+      if (currentRect) {
+        drawRect(currentRect, "#ffd000");
+      }
+    }
+
+    function drawRect(rect, color) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 4]);
+      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+      ctx.restore();
+    }
+
+    function getCanvasPos(event) {
+      const rect = photoCanvas.getBoundingClientRect();
+
+      const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+
+      const scaleX = photoCanvas.width / rect.width;
+      const scaleY = photoCanvas.height / rect.height;
+
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    }
+
+    function startDrag(event) {
+      if (!loadedImage) return;
+      event.preventDefault();
+
+      isDragging = true;
+      dragStart = getCanvasPos(event);
+      currentRect = { x: dragStart.x, y: dragStart.y, w: 0, h: 0 };
+    }
+
+    function moveDrag(event) {
+      if (!isDragging || !dragStart) return;
+      event.preventDefault();
+
+      const pos = getCanvasPos(event);
+
+      currentRect = {
+        x: Math.min(dragStart.x, pos.x),
+        y: Math.min(dragStart.y, pos.y),
+        w: Math.abs(pos.x - dragStart.x),
+        h: Math.abs(pos.y - dragStart.y)
+      };
+
+      redrawCanvas();
+    }
+
+    function endDrag(event) {
+      if (!isDragging || !currentRect) return;
+      event.preventDefault();
+
+      isDragging = false;
+
+      if (currentRect.w > 20 && currentRect.h > 20) {
+        const crop = cropRect(currentRect);
+
+        pendingSelections.push({
+          id: uid("pending"),
+          rect: currentRect,
+          imageData: crop,
+          cantidad: 1
+        });
+      }
+
+      currentRect = null;
+      dragStart = null;
+
+      redrawCanvas();
+      renderPending();
+    }
+
+    photoCanvas.addEventListener("mousedown", startDrag);
+    photoCanvas.addEventListener("mousemove", moveDrag);
+    photoCanvas.addEventListener("mouseup", endDrag);
+    photoCanvas.addEventListener("mouseleave", endDrag);
+
+    photoCanvas.addEventListener("touchstart", startDrag, { passive: false });
+    photoCanvas.addEventListener("touchmove", moveDrag, { passive: false });
+    photoCanvas.addEventListener("touchend", endDrag, { passive: false });
+
+    function cropRect(rect) {
+      const temp = document.createElement("canvas");
+      const tctx = temp.getContext("2d");
+
+      temp.width = rect.w;
+      temp.height = rect.h;
+
+      tctx.drawImage(
+        photoCanvas,
+        rect.x,
+        rect.y,
+        rect.w,
+        rect.h,
+        0,
+        0,
+        rect.w,
+        rect.h
+      );
+
+      return temp.toDataURL("image/png");
+    }
+
+    function renderPending() {
+      const grid = document.getElementById("pendingGrid");
+      grid.innerHTML = "";
+
+      pendingSelections.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "card";
+
+        div.innerHTML = `
+          <img src="${item.imageData}">
+          <div class="qty">Cantidad: ${item.cantidad}</div>
+          <div class="card-actions">
+            <button class="small-btn" onclick="changePendingQty('${item.id}', 1)">+</button>
+            <button class="small-btn secondary" onclick="changePendingQty('${item.id}', -1)">-</button>
+            <button class="small-btn danger" onclick="deletePending('${item.id}')">Eliminar</button>
+          </div>
+        `;
+
+        grid.appendChild(div);
+      });
+    }
+
+    function changePendingQty(id, delta) {
+      const item = pendingSelections.find(x => x.id === id);
+      if (!item) return;
+
+      item.cantidad += delta;
+      if (item.cantidad < 1) item.cantidad = 1;
+
+      renderPending();
+    }
+
+    function deletePending(id) {
+      pendingSelections = pendingSelections.filter(x => x.id !== id);
+      redrawCanvas();
+      renderPending();
+    }
+
+    function clearPendingSelections() {
+      if (!confirm("¿Limpiar las figuritas seleccionadas de esta foto?")) return;
+
+      pendingSelections = [];
+      redrawCanvas();
+      renderPending();
+    }
+
+    function savePendingStickers() {
+      if (pendingSelections.length === 0) {
+        alert("Todavía no seleccionaste ninguna figurita.");
+        return;
+      }
+
+      pendingSelections.forEach(item => {
+        state.stickers.push({
+          id: uid("fig"),
+          imageData: item.imageData,
+          cantidad: item.cantidad,
+          activa: true,
+          creadaEn: new Date().toISOString()
+        });
+      });
+
+      pendingSelections = [];
+      saveState();
+      renderAll();
+
+      alert("Figuritas guardadas correctamente.");
+      showSection("inventory");
+    }
+
+    function autoDetectPlaceholder() {
+      alert(
+        "Este botón queda preparado para la Versión 2.\n\n" +
+        "Después vamos a conectarlo con OpenCV.js para detectar automáticamente los rectángulos de las figuritas."
+      );
+    }
+
+    function renderInventory() {
+      const grid = document.getElementById("inventoryGrid");
+      grid.innerHTML = "";
+
+      const activeStickers = state.stickers.filter(s => s.activa && s.cantidad > 0);
+
+      if (activeStickers.length === 0) {
+        grid.innerHTML = "<p class='hint'>Todavía no hay figuritas disponibles.</p>";
+        return;
+      }
+
+      activeStickers.forEach(sticker => {
+        const div = document.createElement("div");
+        div.className = "card";
+
+        div.innerHTML = `
+          <img src="${sticker.imageData}">
+          <div class="qty">x${sticker.cantidad}</div>
+          <div class="card-actions">
+            <button class="small-btn" onclick="changeStickerQty('${sticker.id}', 1)">+</button>
+            <button class="small-btn secondary" onclick="changeStickerQty('${sticker.id}', -1)">-</button>
+            <button class="small-btn danger" onclick="deleteSticker('${sticker.id}')">Eliminar</button>
+          </div>
+        `;
+
+        grid.appendChild(div);
+      });
+    }
+
+    function changeStickerQty(id, delta) {
+      const sticker = state.stickers.find(s => s.id === id);
+      if (!sticker) return;
+
+      sticker.cantidad += delta;
+
+      if (sticker.cantidad <= 0) {
+        sticker.cantidad = 0;
+        sticker.activa = false;
+      }
+
+      saveState();
+      renderAll();
+    }
+
+    function deleteSticker(id) {
+      if (!confirm("¿Eliminar esta figurita?")) return;
+
+      const sticker = state.stickers.find(s => s.id === id);
+      if (!sticker) return;
+
+      sticker.activa = false;
+      sticker.cantidad = 0;
+
+      saveState();
+      renderAll();
+    }
+
+    function addFriend() {
+      const input = document.getElementById("friendName");
+      const nombre = input.value.trim();
+
+      if (!nombre) {
+        alert("Ingresá un nombre.");
+        return;
+      }
+
+      state.friends.push({
+        id: uid("amigo"),
+        nombre
+      });
+
+      input.value = "";
+      saveState();
+      renderAll();
+    }
+
+    function deleteFriend(id) {
+      if (!confirm("¿Eliminar amigo?")) return;
+
+      state.friends = state.friends.filter(f => f.id !== id);
+
+      saveState();
+      renderAll();
+    }
+
+    function renderFriends() {
+      const list = document.getElementById("friendsList");
+      list.innerHTML = "";
+
+      if (state.friends.length === 0) {
+        list.innerHTML = "<p class='hint'>Todavía no agregaste amigos.</p>";
+        return;
+      }
+
+      state.friends.forEach(friend => {
+        const div = document.createElement("div");
+        div.className = "friend-item";
+
+        div.innerHTML = `
+          <strong>${escapeHtml(friend.nombre)}</strong>
+          <button class="small-btn danger" onclick="deleteFriend('${friend.id}')">Eliminar</button>
+        `;
+
+        list.appendChild(div);
+      });
+    }
+
+    function renderFriendSelect() {
+      const select = document.getElementById("friendSelect");
+      select.innerHTML = "";
+
+      if (state.friends.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "Sin amigos cargados";
+        select.appendChild(opt);
+        return;
+      }
+
+      state.friends.forEach(friend => {
+        const opt = document.createElement("option");
+        opt.value = friend.id;
+        opt.textContent = friend.nombre;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderExchange() {
+      renderFriendSelect();
+
+      const grid = document.getElementById("exchangeGrid");
+      grid.innerHTML = "";
+
+      const available = state.stickers.filter(s => s.activa && s.cantidad > 0);
+
+      if (available.length === 0) {
+        grid.innerHTML = "<p class='hint'>No hay figuritas disponibles para intercambiar.</p>";
+        return;
+      }
+
+      available.forEach(sticker => {
+        const selectedQty = exchangeSelection[sticker.id] || 0;
+
+        const div = document.createElement("div");
+        div.className = "card" + (selectedQty > 0 ? " selected" : "");
+        div.onclick = () => cycleExchangeQty(sticker.id);
+
+        div.innerHTML = `
+          <img src="${sticker.imageData}">
+          <div class="badge">Disponible: ${sticker.cantidad}</div>
+          <div class="qty">Seleccionado: ${selectedQty}</div>
+        `;
+
+        grid.appendChild(div);
+      });
+    }
+
+    function cycleExchangeQty(stickerId) {
+      const sticker = state.stickers.find(s => s.id === stickerId);
+      if (!sticker) return;
+
+      const current = exchangeSelection[stickerId] || 0;
+      const next = current + 1;
+
+      if (next > sticker.cantidad) {
+        delete exchangeSelection[stickerId];
+      } else {
+        exchangeSelection[stickerId] = next;
+      }
+
+      renderExchange();
+    }
+
+    function clearExchangeSelection() {
+      exchangeSelection = {};
+      generatedImageData = null;
+      document.getElementById("generatedImage").src = "";
+      renderExchange();
+    }
+
+    async function finishExchange() {
+      const friendId = document.getElementById("friendSelect").value;
+
+      if (!friendId) {
+        alert("Primero agregá o seleccioná un amigo.");
+        return;
+      }
+
+      const items = Object.entries(exchangeSelection)
+        .filter(([id, qty]) => qty > 0)
+        .map(([id, qty]) => {
+          const sticker = state.stickers.find(s => s.id === id);
+          return {
+            stickerId: id,
+            cantidad: qty,
+            imageData: sticker.imageData
+          };
+        });
+
+      if (items.length === 0) {
+        alert("Seleccioná al menos una figurita para intercambiar.");
+        return;
+      }
+
+      const friend = state.friends.find(f => f.id === friendId);
+
+      generatedImageData = await generateExchangeImage(friend.nombre, items);
+      document.getElementById("generatedImage").src = generatedImageData;
+
+      const beforeSnapshot = items.map(item => {
+        const sticker = state.stickers.find(s => s.id === item.stickerId);
+        return {
+          stickerId: sticker.id,
+          cantidadAnterior: sticker.cantidad,
+          activaAnterior: sticker.activa
+        };
+      });
+
+      items.forEach(item => {
+        const sticker = state.stickers.find(s => s.id === item.stickerId);
+        if (!sticker) return;
+
+        sticker.cantidad -= item.cantidad;
+
+        if (sticker.cantidad <= 0) {
+          sticker.cantidad = 0;
+          sticker.activa = false;
+        }
+      });
+
+      const exchange = {
+        id: uid("int"),
+        friendId,
+        friendName: friend.nombre,
+        fecha: new Date().toISOString(),
+        items,
+        imageData: generatedImageData
+      };
+
+      state.exchanges.push(exchange);
+
+      state.lastExchangeUndo = {
+        exchangeId: exchange.id,
+        beforeSnapshot
+      };
+
+      exchangeSelection = {};
+      saveState();
+      renderAll();
+
+      alert("Intercambio generado y cantidades descontadas.");
+    }
+
+    function generateExchangeImage(friendName, items) {
+      return new Promise(resolve => {
+        const cellW = 220;
+        const cellH = 250;
+        const padding = 30;
+        const titleH = 90;
+        const footerH = 50;
+
+        const cols = Math.min(3, Math.max(1, items.length));
+        const rows = Math.ceil(items.length / cols);
+
+        const canvas = document.createElement("canvas");
+        const c = canvas.getContext("2d");
+
+        canvas.width = padding * 2 + cols * cellW;
+        canvas.height = titleH + padding + rows * cellH + footerH;
+
+        c.fillStyle = "#ffffff";
+        c.fillRect(0, 0, canvas.width, canvas.height);
+
+        c.fillStyle = "#111111";
+        c.font = "bold 30px Arial";
+        c.textAlign = "center";
+        c.fillText("Figuritas para intercambiar", canvas.width / 2, 42);
+
+        c.font = "20px Arial";
+        c.fillText("Para: " + friendName, canvas.width / 2, 72);
+
+        let loaded = 0;
+
+        items.forEach((item, index) => {
+          const img = new Image();
+
+          img.onload = function() {
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+
+            const x = padding + col * cellW;
+            const y = titleH + padding + row * cellH;
+
+            c.fillStyle = "#f2f2f2";
+            c.fillRect(x + 10, y + 10, cellW - 20, cellH - 50);
+
+            c.strokeStyle = "#dddddd";
+            c.lineWidth = 2;
+            c.strokeRect(x + 10, y + 10, cellW - 20, cellH - 50);
+
+            const maxImgW = cellW - 40;
+            const maxImgH = cellH - 80;
+
+            const ratio = Math.min(maxImgW / img.width, maxImgH / img.height);
+
+            const drawW = img.width * ratio;
+            const drawH = img.height * ratio;
+
+            const dx = x + (cellW - drawW) / 2;
+            const dy = y + 20 + ((cellH - 80) - drawH) / 2;
+
+            c.drawImage(img, dx, dy, drawW, drawH);
+
+            c.fillStyle = "#111111";
+            c.font = "bold 20px Arial";
+            c.textAlign = "center";
+            c.fillText("x" + item.cantidad, x + cellW / 2, y + cellH - 18);
+
+            loaded++;
+
+            if (loaded === items.length) {
+              c.fillStyle = "#555555";
+              c.font = "15px Arial";
+              c.fillText("Generado con Intercambio de Figuritas", canvas.width / 2, canvas.height - 18);
+
+              resolve(canvas.toDataURL("image/png"));
+            }
+          };
+
+          img.src = item.imageData;
+        });
+      });
+    }
+
+    function downloadGeneratedImage() {
+      if (!generatedImageData) {
+        const img = document.getElementById("generatedImage");
+        generatedImageData = img.src || null;
+      }
+
+      if (!generatedImageData) {
+        alert("Primero generá una imagen de intercambio.");
+        return;
+      }
+
+      const a = document.createElement("a");
+      a.href = generatedImageData;
+      a.download = "figuritas_intercambio.png";
+      a.click();
+    }
+
+    async function shareGeneratedImage() {
+      if (!generatedImageData) {
+        alert("Primero generá una imagen.");
+        return;
+      }
+
+      try {
+        const blob = await dataUrlToBlob(generatedImageData);
+        const file = new File([blob], "figuritas_intercambio.png", { type: "image/png" });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: "Figuritas para intercambiar",
+            text: "Te paso las figuritas para intercambiar.",
+            files: [file]
+          });
+        } else if (navigator.share) {
+          await navigator.share({
+            title: "Figuritas para intercambiar",
+            text: "Te paso las figuritas para intercambiar."
+          });
+        } else {
+          alert("Este navegador no permite compartir directo. Descargá la imagen y mandala por WhatsApp.");
+        }
+      } catch (e) {
+        alert("No se pudo compartir. Podés descargar la imagen y enviarla manualmente.");
+      }
+    }
+
+    function openWhatsAppText() {
+      const text = encodeURIComponent("Hola, te paso las figuritas que tengo para intercambiar.");
+      window.open("https://wa.me/?text=" + text, "_blank");
+    }
+
+    function dataUrlToBlob(dataUrl) {
+      return fetch(dataUrl).then(res => res.blob());
+    }
+
+    function undoLastExchange() {
+      if (!state.lastExchangeUndo) {
+        alert("No hay intercambio reciente para deshacer.");
+        return;
+      }
+
+      const exchangeId = state.lastExchangeUndo.exchangeId;
+
+      if (!confirm("¿Deshacer el último intercambio? Se restaurarán las cantidades anteriores.")) return;
+
+      state.lastExchangeUndo.beforeSnapshot.forEach(item => {
+        const sticker = state.stickers.find(s => s.id === item.stickerId);
+        if (!sticker) return;
+
+        sticker.cantidad = item.cantidadAnterior;
+        sticker.activa = item.activaAnterior;
+      });
+
+      state.exchanges = state.exchanges.filter(ex => ex.id !== exchangeId);
+      state.lastExchangeUndo = null;
+
+      saveState();
+      renderAll();
+
+      alert("Último intercambio deshecho.");
+    }
+
+    function renderHistory() {
+      const list = document.getElementById("historyList");
+      list.innerHTML = "";
+
+      if (state.exchanges.length === 0) {
+        list.innerHTML = "<p class='hint'>Todavía no hay intercambios registrados.</p>";
+        return;
+      }
+
+      [...state.exchanges].reverse().forEach(ex => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.style.textAlign = "left";
+        div.style.marginBottom = "10px";
+
+        const fecha = new Date(ex.fecha).toLocaleString();
+
+        div.innerHTML = `
+          <strong>Amigo: ${escapeHtml(ex.friendName)}</strong><br>
+          <span class="hint">${fecha}</span><br>
+          <span class="badge">${ex.items.length} figurita/s seleccionada/s</span>
+          <br><br>
+          <img src="${ex.imageData}" style="height:160px; width:auto; max-width:100%;">
+        `;
+
+        list.appendChild(div);
+      });
+    }
+
+    function clearHistory() {
+      if (!confirm("¿Borrar historial? Esto no modifica las cantidades actuales.")) return;
+
+      state.exchanges = [];
+      state.lastExchangeUndo = null;
+
+      saveState();
+      renderAll();
+    }
+
+    function exportBackup() {
+      const data = JSON.stringify(state, null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "respaldo_figuritas.json";
+      a.click();
+
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+
+          if (!imported.stickers || !imported.friends || !imported.exchanges) {
+            alert("El archivo no parece ser un respaldo válido.");
+            return;
+          }
+
+          if (!confirm("¿Importar respaldo? Se reemplazarán los datos actuales.")) return;
+
+          state = imported;
+          saveState();
+          renderAll();
+
+          alert("Respaldo importado correctamente.");
+        } catch (err) {
+          alert("No se pudo leer el archivo.");
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    loadState();
+  </script>
+</body>
+</html>
