@@ -29,6 +29,12 @@
       font-size: 22px;
     }
 
+    header .sub {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #bbb;
+    }
+
     nav {
       display: flex;
       flex-wrap: wrap;
@@ -44,6 +50,11 @@
       border-radius: 8px;
       border: none;
       padding: 10px 12px;
+    }
+
+    input, select {
+      background: #fff;
+      color: #111;
     }
 
     button {
@@ -110,6 +121,7 @@
     canvas {
       display: block;
       max-width: 100%;
+      touch-action: none;
     }
 
     .grid {
@@ -175,6 +187,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
     }
 
     #generatedImage {
@@ -203,12 +216,24 @@
       margin-top: 10px;
       font-size: 14px;
     }
+
+    .empty {
+      color: #bbb;
+      font-size: 14px;
+    }
+
+    .mini-info {
+      font-size: 13px;
+      color: #bbb;
+      margin-top: 4px;
+    }
   </style>
 </head>
 
 <body>
   <header>
     <h1>Intercambio de Figuritas</h1>
+    <div class="sub">Versión 1.1</div>
   </header>
 
   <nav>
@@ -227,13 +252,14 @@
       <h2>Cargar foto general</h2>
       <p class="hint">
         Cargá una foto donde estén las figuritas que querés cambiar.
-        En esta V1 las seleccionamos manualmente con rectángulos.
-        Más adelante este mismo módulo queda preparado para detección automática.
+        En esta versión las seleccionás manualmente con rectángulos.
+        Más adelante este módulo queda preparado para detección automática.
       </p>
 
       <div class="top-row">
         <input id="photoInput" type="file" accept="image/*" capture="environment" onchange="loadPhoto(event)">
         <button class="blue" onclick="autoDetectPlaceholder()">Detectar automático</button>
+        <button class="secondary" onclick="undoLastPendingSelection()">Deshacer último recorte</button>
         <button class="ok" onclick="savePendingStickers()">Guardar figuritas recortadas</button>
         <button class="danger" onclick="clearPendingSelections()">Limpiar selección</button>
       </div>
@@ -251,13 +277,29 @@
       <h2>Figuritas detectadas / seleccionadas</h2>
       <div id="pendingGrid" class="grid"></div>
     </div>
+
+    <div id="editCropPanel" class="panel" style="display:none;">
+      <h2>Editar recorte</h2>
+      <p class="hint">
+        Dibujá un nuevo rectángulo dentro de la imagen para corregir el recorte.
+      </p>
+
+      <div class="top-row">
+        <button class="ok" onclick="saveEditedCrop()">Guardar recorte editado</button>
+        <button class="secondary" onclick="cancelEditCrop()">Cancelar</button>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="editCropCanvas"></canvas>
+      </div>
+    </div>
   </section>
 
   <section id="inventory">
     <div class="panel">
       <h2>Mis figuritas disponibles</h2>
       <p class="hint">
-        Acá están las figuritas que tenés para cambiar. Podés corregir cantidades o eliminar alguna.
+        Acá están las figuritas que tenés para cambiar. Podés corregir cantidades, editar el recorte o eliminar alguna.
       </p>
       <div id="inventoryGrid" class="grid"></div>
     </div>
@@ -320,7 +362,7 @@
   </section>
 
   <script>
-    const STORAGE_KEY = "figuritas_app_v1";
+    const STORAGE_KEY = "figuritas_app_v1_1";
 
     let state = {
       stickers: [],
@@ -337,8 +379,17 @@
     let exchangeSelection = {};
     let generatedImageData = null;
 
+    let editCropTarget = null;
+    let editCropImage = null;
+    let editCropDragging = false;
+    let editCropStart = null;
+    let editCropRect = null;
+
     const photoCanvas = document.getElementById("photoCanvas");
     const ctx = photoCanvas.getContext("2d");
+
+    const editCropCanvas = document.getElementById("editCropCanvas");
+    const editCropCtx = editCropCanvas.getContext("2d");
 
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -407,13 +458,15 @@
     }
 
     function redrawCanvas() {
+      ctx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
+
       if (!loadedImage) return;
 
-      ctx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
       ctx.drawImage(loadedImage, 0, 0, photoCanvas.width, photoCanvas.height);
 
-      pendingSelections.forEach(rect => {
-        drawRect(rect, "#20b15a");
+      pendingSelections.forEach((item, index) => {
+        drawRect(item.rect, "#20b15a");
+        drawRectLabel(item.rect, index + 1, "#20b15a");
       });
 
       if (currentRect) {
@@ -430,12 +483,20 @@
       ctx.restore();
     }
 
+    function drawRectLabel(rect, number, color) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.fillRect(rect.x, rect.y - 24, 28, 22);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 14px Arial";
+      ctx.fillText(number, rect.x + 9, rect.y - 8);
+      ctx.restore();
+    }
+
     function getCanvasPos(event) {
       const rect = photoCanvas.getBoundingClientRect();
-
       const clientX = event.touches ? event.touches[0].clientX : event.clientX;
       const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-
       const scaleX = photoCanvas.width / rect.width;
       const scaleY = photoCanvas.height / rect.height;
 
@@ -529,16 +590,23 @@
       const grid = document.getElementById("pendingGrid");
       grid.innerHTML = "";
 
-      pendingSelections.forEach(item => {
+      if (pendingSelections.length === 0) {
+        grid.innerHTML = "<p class='empty'>Todavía no seleccionaste figuritas.</p>";
+        return;
+      }
+
+      pendingSelections.forEach((item, index) => {
         const div = document.createElement("div");
         div.className = "card";
 
         div.innerHTML = `
           <img src="${item.imageData}">
+          <div class="mini-info">Recorte ${index + 1}</div>
           <div class="qty">Cantidad: ${item.cantidad}</div>
           <div class="card-actions">
             <button class="small-btn" onclick="changePendingQty('${item.id}', 1)">+</button>
             <button class="small-btn secondary" onclick="changePendingQty('${item.id}', -1)">-</button>
+            <button class="small-btn blue" onclick="openEditCrop('pending', '${item.id}')">Editar</button>
             <button class="small-btn danger" onclick="deletePending('${item.id}')">Eliminar</button>
           </div>
         `;
@@ -563,12 +631,183 @@
       renderPending();
     }
 
+    function undoLastPendingSelection() {
+      if (pendingSelections.length === 0) {
+        alert("No hay recortes para deshacer.");
+        return;
+      }
+
+      pendingSelections.pop();
+      redrawCanvas();
+      renderPending();
+    }
+
     function clearPendingSelections() {
       if (!confirm("¿Limpiar las figuritas seleccionadas de esta foto?")) return;
 
       pendingSelections = [];
       redrawCanvas();
       renderPending();
+    }
+
+    function openEditCrop(type, id) {
+      let item = null;
+
+      if (type === "pending") {
+        item = pendingSelections.find(x => x.id === id);
+      }
+
+      if (type === "sticker") {
+        item = state.stickers.find(x => x.id === id);
+      }
+
+      if (!item) return;
+
+      editCropTarget = { type, id };
+      editCropImage = new Image();
+
+      editCropImage.onload = function() {
+        const maxWidth = 1000;
+        const scale = editCropImage.width > maxWidth ? maxWidth / editCropImage.width : 1;
+
+        editCropCanvas.width = editCropImage.width * scale;
+        editCropCanvas.height = editCropImage.height * scale;
+
+        editCropRect = null;
+        redrawEditCropCanvas();
+
+        document.getElementById("editCropPanel").style.display = "block";
+        document.getElementById("editCropPanel").scrollIntoView({ behavior: "smooth" });
+      };
+
+      editCropImage.src = item.imageData;
+    }
+
+    function redrawEditCropCanvas() {
+      if (!editCropImage) return;
+
+      editCropCtx.clearRect(0, 0, editCropCanvas.width, editCropCanvas.height);
+      editCropCtx.drawImage(editCropImage, 0, 0, editCropCanvas.width, editCropCanvas.height);
+
+      if (editCropRect) {
+        editCropCtx.save();
+        editCropCtx.strokeStyle = "#ffd000";
+        editCropCtx.lineWidth = 3;
+        editCropCtx.setLineDash([8, 4]);
+        editCropCtx.strokeRect(editCropRect.x, editCropRect.y, editCropRect.w, editCropRect.h);
+        editCropCtx.restore();
+      }
+    }
+
+    function getEditCropCanvasPos(event) {
+      const rect = editCropCanvas.getBoundingClientRect();
+      const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+      const scaleX = editCropCanvas.width / rect.width;
+      const scaleY = editCropCanvas.height / rect.height;
+
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    }
+
+    function startEditCropDrag(event) {
+      if (!editCropImage) return;
+      event.preventDefault();
+
+      editCropDragging = true;
+      editCropStart = getEditCropCanvasPos(event);
+      editCropRect = {
+        x: editCropStart.x,
+        y: editCropStart.y,
+        w: 0,
+        h: 0
+      };
+    }
+
+    function moveEditCropDrag(event) {
+      if (!editCropDragging || !editCropStart) return;
+      event.preventDefault();
+
+      const pos = getEditCropCanvasPos(event);
+
+      editCropRect = {
+        x: Math.min(editCropStart.x, pos.x),
+        y: Math.min(editCropStart.y, pos.y),
+        w: Math.abs(pos.x - editCropStart.x),
+        h: Math.abs(pos.y - editCropStart.y)
+      };
+
+      redrawEditCropCanvas();
+    }
+
+    function endEditCropDrag(event) {
+      if (!editCropDragging) return;
+      event.preventDefault();
+      editCropDragging = false;
+    }
+
+    editCropCanvas.addEventListener("mousedown", startEditCropDrag);
+    editCropCanvas.addEventListener("mousemove", moveEditCropDrag);
+    editCropCanvas.addEventListener("mouseup", endEditCropDrag);
+    editCropCanvas.addEventListener("mouseleave", endEditCropDrag);
+
+    editCropCanvas.addEventListener("touchstart", startEditCropDrag, { passive: false });
+    editCropCanvas.addEventListener("touchmove", moveEditCropDrag, { passive: false });
+    editCropCanvas.addEventListener("touchend", endEditCropDrag, { passive: false });
+
+    function saveEditedCrop() {
+      if (!editCropTarget || !editCropRect || editCropRect.w < 20 || editCropRect.h < 20) {
+        alert("Dibujá un recorte válido antes de guardar.");
+        return;
+      }
+
+      const temp = document.createElement("canvas");
+      const tctx = temp.getContext("2d");
+
+      temp.width = editCropRect.w;
+      temp.height = editCropRect.h;
+
+      tctx.drawImage(
+        editCropCanvas,
+        editCropRect.x,
+        editCropRect.y,
+        editCropRect.w,
+        editCropRect.h,
+        0,
+        0,
+        editCropRect.w,
+        editCropRect.h
+      );
+
+      const newImageData = temp.toDataURL("image/png");
+
+      if (editCropTarget.type === "pending") {
+        const item = pendingSelections.find(x => x.id === editCropTarget.id);
+        if (item) item.imageData = newImageData;
+      }
+
+      if (editCropTarget.type === "sticker") {
+        const item = state.stickers.find(x => x.id === editCropTarget.id);
+        if (item) item.imageData = newImageData;
+        saveState();
+      }
+
+      cancelEditCrop();
+      renderAll();
+      alert("Recorte actualizado.");
+    }
+
+    function cancelEditCrop() {
+      editCropTarget = null;
+      editCropImage = null;
+      editCropDragging = false;
+      editCropStart = null;
+      editCropRect = null;
+
+      document.getElementById("editCropPanel").style.display = "none";
+      editCropCtx.clearRect(0, 0, editCropCanvas.width, editCropCanvas.height);
     }
 
     function savePendingStickers() {
@@ -609,7 +848,7 @@
       const activeStickers = state.stickers.filter(s => s.activa && s.cantidad > 0);
 
       if (activeStickers.length === 0) {
-        grid.innerHTML = "<p class='hint'>Todavía no hay figuritas disponibles.</p>";
+        grid.innerHTML = "<p class='empty'>Todavía no hay figuritas disponibles.</p>";
         return;
       }
 
@@ -623,6 +862,7 @@
           <div class="card-actions">
             <button class="small-btn" onclick="changeStickerQty('${sticker.id}', 1)">+</button>
             <button class="small-btn secondary" onclick="changeStickerQty('${sticker.id}', -1)">-</button>
+            <button class="small-btn blue" onclick="openEditCrop('sticker', '${sticker.id}')">Editar</button>
             <button class="small-btn danger" onclick="deleteSticker('${sticker.id}')">Eliminar</button>
           </div>
         `;
@@ -692,7 +932,7 @@
       list.innerHTML = "";
 
       if (state.friends.length === 0) {
-        list.innerHTML = "<p class='hint'>Todavía no agregaste amigos.</p>";
+        list.innerHTML = "<p class='empty'>Todavía no agregaste amigos.</p>";
         return;
       }
 
@@ -738,7 +978,7 @@
       const available = state.stickers.filter(s => s.activa && s.cantidad > 0);
 
       if (available.length === 0) {
-        grid.innerHTML = "<p class='hint'>No hay figuritas disponibles para intercambiar.</p>";
+        grid.innerHTML = "<p class='empty'>No hay figuritas disponibles para intercambiar.</p>";
         return;
       }
 
@@ -807,6 +1047,23 @@
       }
 
       const friend = state.friends.find(f => f.id === friendId);
+
+      let totalUnidades = 0;
+      items.forEach(item => {
+        totalUnidades += item.cantidad;
+      });
+
+      const confirmar = confirm(
+        "Vas a generar un intercambio con: " + friend.nombre + "\n\n" +
+        "Figuritas distintas: " + items.length + "\n" +
+        "Unidades totales: " + totalUnidades + "\n\n" +
+        "Cuando confirmes, se va a generar la imagen y se van a descontar las cantidades del inventario.\n\n" +
+        "¿Confirmar intercambio?"
+      );
+
+      if (!confirmar) {
+        return;
+      }
 
       generatedImageData = await generateExchangeImage(friend.nombre, items);
       document.getElementById("generatedImage").src = generatedImageData;
@@ -904,7 +1161,6 @@
 
             const maxImgW = cellW - 40;
             const maxImgH = cellH - 80;
-
             const ratio = Math.min(maxImgW / img.width, maxImgH / img.height);
 
             const drawW = img.width * ratio;
@@ -926,7 +1182,6 @@
               c.fillStyle = "#555555";
               c.font = "15px Arial";
               c.fillText("Generado con Intercambio de Figuritas", canvas.width / 2, canvas.height - 18);
-
               resolve(canvas.toDataURL("image/png"));
             }
           };
@@ -997,9 +1252,9 @@
         return;
       }
 
-      const exchangeId = state.lastExchangeUndo.exchangeId;
-
       if (!confirm("¿Deshacer el último intercambio? Se restaurarán las cantidades anteriores.")) return;
+
+      const exchangeId = state.lastExchangeUndo.exchangeId;
 
       state.lastExchangeUndo.beforeSnapshot.forEach(item => {
         const sticker = state.stickers.find(s => s.id === item.stickerId);
@@ -1023,7 +1278,7 @@
       list.innerHTML = "";
 
       if (state.exchanges.length === 0) {
-        list.innerHTML = "<p class='hint'>Todavía no hay intercambios registrados.</p>";
+        list.innerHTML = "<p class='empty'>Todavía no hay intercambios registrados.</p>";
         return;
       }
 
@@ -1038,7 +1293,7 @@
         div.innerHTML = `
           <strong>Amigo: ${escapeHtml(ex.friendName)}</strong><br>
           <span class="hint">${fecha}</span><br>
-          <span class="badge">${ex.items.length} figurita/s seleccionada/s</span>
+          <span class="badge">${ex.items.length} figurita/s distinta/s</span>
           <br><br>
           <img src="${ex.imageData}" style="height:160px; width:auto; max-width:100%;">
         `;
@@ -1066,7 +1321,7 @@
       a.download = "respaldo_figuritas.json";
       a.click();
 
-      URL.revokeObjectURL(a.href);
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     }
 
     function importBackup(event) {
