@@ -3,277 +3,661 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#2f80ed" />
+  <meta name="theme-color" content="#111827" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <title>Mis proyectos HTML</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BID Apps" />
+  <title>BID Apps</title>
+
   <style>
     :root{
-      --bg1:#f7fbff;
-      --bg2:#eef7ff;
+      --bg:#f3f6fb;
       --card:#ffffff;
-      --text:#183153;
-      --muted:#5f728c;
-      --accent:#2f80ed;
-      --accent2:#56ccf2;
-      --line:#dbe7f3;
-      --shadow:0 12px 30px rgba(24,49,83,.10);
-      --radius:24px;
+      --text:#172033;
+      --muted:#667085;
+      --line:#e4e7ec;
+      --accent:#2563eb;
+      --accent-soft:#eef4ff;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:22px;
     }
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
+
     html{
-      height:100%;
-      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      background:var(--bg);
+      min-height:100%;
     }
+
     body{
       margin:0;
-      font-family:Arial, Helvetica, sans-serif;
-      color:var(--text);
-      background:linear-gradient(180deg,var(--bg1),var(--bg2));
       min-height:100vh;
       min-height:100dvh;
-      padding:22px;
-      padding-top:max(22px, env(safe-area-inset-top));
-      padding-right:max(22px, env(safe-area-inset-right));
-      padding-bottom:max(22px, env(safe-area-inset-bottom));
-      padding-left:max(22px, env(safe-area-inset-left));
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(37,99,235,.10), transparent 30%),
+        var(--bg);
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(24px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
       -webkit-text-size-adjust:100%;
     }
+
     .wrap{
-      width:min(1100px,100%);
+      width:min(1180px,100%);
       margin:0 auto;
     }
+
     .hero{
-      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      background:linear-gradient(135deg,#111827 0%,#1d4ed8 55%,#38bdf8 100%);
       color:#fff;
-      border-radius:32px;
-      padding:28px 24px;
+      border-radius:30px;
+      padding:26px;
       box-shadow:var(--shadow);
       margin-bottom:18px;
     }
-    .hero h1{
-      margin:0 0 10px;
-      font-size:clamp(1.8rem,4vw,3rem);
-    }
-    .hero p{
-      margin:0;
-      font-size:1rem;
-      opacity:.96;
-      max-width:760px;
-      line-height:1.5;
-    }
-    .pill-row{
+
+    .hero-top{
       display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:16px;
+      align-items:center;
+      gap:14px;
     }
-    .pill{
-      background:rgba(255,255,255,.18);
-      border:1px solid rgba(255,255,255,.28);
+
+    .logo{
+      width:58px;
+      height:58px;
+      border-radius:18px;
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.20);
+      font-size:30px;
+      flex:0 0 auto;
+    }
+
+    .hero h1{
+      margin:0;
+      font-size:clamp(1.8rem,4vw,3rem);
+      letter-spacing:-.02em;
+    }
+
+    .hero p{
+      margin:10px 0 0;
+      opacity:.94;
+      line-height:1.5;
+      max-width:760px;
+    }
+
+    .toolbar{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:12px;
+      margin:18px 0 12px;
+    }
+
+    .search{
+      position:relative;
+    }
+
+    .search input{
+      width:100%;
+      min-height:52px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:0 16px 0 46px;
+      font-size:16px;
+      outline:none;
+      background:#fff;
+      color:var(--text);
+      box-shadow:0 4px 14px rgba(15,23,42,.04);
+    }
+
+    .search input:focus{
+      border-color:#93b4ff;
+      box-shadow:0 0 0 4px rgba(37,99,235,.10);
+    }
+
+    .search::before{
+      content:"🔎";
+      position:absolute;
+      left:15px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:20px;
+      pointer-events:none;
+    }
+
+    .clear-btn{
+      min-height:52px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:0 16px;
+      background:#fff;
+      color:var(--text);
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .filters{
+      display:flex;
+      gap:9px;
+      overflow-x:auto;
+      padding:4px 0 12px;
+      scrollbar-width:none;
+    }
+
+    .filters::-webkit-scrollbar{
+      display:none;
+    }
+
+    .filter-btn{
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--text);
       border-radius:999px;
-      padding:8px 12px;
-      font-weight:bold;
+      padding:10px 14px;
+      font-weight:700;
+      font-size:14px;
+      white-space:nowrap;
+      cursor:pointer;
+    }
+
+    .filter-btn.active{
+      background:var(--accent);
+      border-color:var(--accent);
+      color:#fff;
+    }
+
+    .section-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin:8px 0 12px;
+    }
+
+    .section-head h2{
+      margin:0;
+      font-size:1.1rem;
+    }
+
+    .counter{
+      color:var(--muted);
       font-size:.95rem;
     }
-    .section-title{
-      margin:18px 0 12px;
-      font-size:1.15rem;
-    }
+
     .grid{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
       gap:16px;
     }
+
     .card{
+      position:relative;
       background:var(--card);
       border:1px solid var(--line);
-      border-radius:24px;
+      border-radius:var(--radius);
       padding:18px;
       box-shadow:var(--shadow);
+      min-height:210px;
       display:flex;
       flex-direction:column;
+      transition:transform .15s ease, box-shadow .15s ease;
+      cursor:pointer;
+    }
+
+    .card:hover{
+      transform:translateY(-2px);
+      box-shadow:0 14px 36px rgba(15,23,42,.12);
+    }
+
+    .card:active{
+      transform:scale(.99);
+    }
+
+    .card-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
       gap:12px;
     }
-    .card h2{
-      margin:0;
-      font-size:1.15rem;
+
+    .icon{
+      width:54px;
+      height:54px;
+      border-radius:17px;
+      display:grid;
+      place-items:center;
+      background:var(--accent-soft);
+      font-size:29px;
     }
+
+    .fav{
+      border:0;
+      background:transparent;
+      font-size:22px;
+      padding:5px;
+      cursor:pointer;
+      border-radius:10px;
+    }
+
+    .fav:hover{
+      background:#f7f8fa;
+    }
+
+    .card h3{
+      margin:16px 0 8px;
+      font-size:1.12rem;
+      line-height:1.25;
+    }
+
     .card p{
       margin:0;
       color:var(--muted);
-      line-height:1.5;
+      line-height:1.45;
       flex:1;
     }
-    .tag{
-      display:inline-block;
-      width:max-content;
-      background:#eef5ff;
-      color:#1d4e89;
-      border:1px solid #d6e5fb;
-      border-radius:999px;
-      padding:6px 10px;
-      font-size:.86rem;
-      font-weight:bold;
-    }
-    .actions{
+
+    .card-footer{
       display:flex;
+      align-items:center;
+      justify-content:space-between;
       gap:10px;
-      flex-wrap:wrap;
+      margin-top:16px;
     }
-    a.btn{
+
+    .tag{
       display:inline-flex;
       align-items:center;
-      justify-content:center;
-      min-height:46px;
-      padding:12px 16px;
-      border-radius:16px;
-      text-decoration:none;
-      font-weight:bold;
-      font-size:16px;
+      min-height:30px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#f2f4f7;
+      color:#475467;
+      font-size:.82rem;
+      font-weight:700;
     }
-    .btn-primary{
-      background:var(--accent);
-      color:#fff;
+
+    .open{
+      color:var(--accent);
+      font-weight:800;
+      font-size:.92rem;
     }
-    .btn-secondary{
-      background:#eef5ff;
-      color:var(--text);
-      border:1px solid #d6e5fb;
-    }
-    .note{
-      margin-top:20px;
-      color:var(--muted);
-      font-size:.95rem;
+
+    .empty{
+      grid-column:1/-1;
       text-align:center;
+      color:var(--muted);
+      background:#fff;
+      border:1px dashed #cfd6df;
+      border-radius:20px;
+      padding:34px 20px;
     }
+
+    .tip{
+      text-align:center;
+      color:var(--muted);
+      font-size:.9rem;
+      margin:22px 0 4px;
+      line-height:1.5;
+    }
+
     @media (max-width:720px){
-      body{
-        padding:14px;
-        padding-top:max(14px, env(safe-area-inset-top));
-        padding-right:max(14px, env(safe-area-inset-right));
-        padding-bottom:max(14px, env(safe-area-inset-bottom));
-        padding-left:max(14px, env(safe-area-inset-left));
-      }
       .hero{
         border-radius:24px;
-        padding:22px 18px;
+        padding:20px;
       }
+
+      .logo{
+        width:50px;
+        height:50px;
+        border-radius:15px;
+      }
+
+      .toolbar{
+        grid-template-columns:1fr;
+      }
+
+      .clear-btn{
+        display:none;
+      }
+
+      .grid{
+        grid-template-columns:1fr 1fr;
+        gap:12px;
+      }
+
       .card{
-        border-radius:20px;
+        min-height:200px;
+        padding:15px;
+      }
+    }
+
+    @media (max-width:520px){
+      .grid{
+        grid-template-columns:1fr 1fr;
+      }
+
+      .card h3{
+        font-size:1rem;
+      }
+
+      .card p{
+        font-size:.9rem;
+      }
+
+      .icon{
+        width:48px;
+        height:48px;
+        font-size:25px;
+      }
+
+      .open{
+        display:none;
       }
     }
   </style>
 </head>
+
 <body>
-  <div class="wrap">
+  <main class="wrap">
     <section class="hero">
-      <h1>📚 Mis proyectos HTML</h1>
-      <p>Acá voy dejando las pruebas, juegos y apps que voy armando. Una especie de índice prolijo para no tener un corral de archivos sueltos dando vueltas por el repo.</p>
-      <div class="pill-row">
-        <span class="pill">GitHub Pages</span>
-        <span class="pill">Compatible con iPhone</span>
-        <span class="pill">Entrada principal del repo</span>
+      <div class="hero-top">
+        <div class="logo">🚀</div>
+        <div>
+          <h1>BID Apps</h1>
+          <p>Acceso rápido a mis herramientas, pruebas, juegos y aplicaciones HTML.</p>
+        </div>
       </div>
     </section>
 
-    <h2 class="section-title">Proyectos publicados</h2>
+    <section class="toolbar">
+      <div class="search">
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Buscar una aplicación..."
+          autocomplete="off"
+        />
+      </div>
+      <button class="clear-btn" id="clearBtn" type="button">Limpiar</button>
+    </section>
+
+    <section class="filters" id="filters"></section>
+
+    <div class="section-head">
+      <h2 id="sectionTitle">Todas las aplicaciones</h2>
+      <div class="counter" id="counter"></div>
+    </div>
 
     <section class="grid" id="projectsGrid"></section>
 
-    <script>
-      const proyectos = [
-        {
-          titulo: "Tablas de multiplicar para Honorio",
-          descripcion: "Juego para practicar tablas con vidas, puntaje, cronómetro y teclado en pantalla. Ajustado para que se lleve bastante mejor con iPhone y Safari.",
-          archivo: "tablas_multiplicar.html",
-          etiqueta: "Juego educativo"
-        },
-        {
-          titulo: "Calcular",
-          descripcion: "Para calcular cualquier cosa",
-          archivo: "calculadora_futurista_iphone13.html",
-          etiqueta: "Calculos"
-        },
-           {
-          titulo: "Acelerador",
-          descripcion: "Para Acelerar audios",
-          archivo: "Acelerador.html",
-          etiqueta: "Audios_Rapidos"
-        },
-        {
-          titulo: "Servicio Técnico",
-          descripcion: "Seguimiento reparaciones",
-          archivo: "Informe_Reparacion_Maquina_V1.html",
-          etiqueta: "STBID"
-          },
-          {
-          titulo: "Figuritas2026",
-          descripcion: "Para intercambiar figuritas",
-          archivo: "intercambio_figus.html",
-          etiqueta: "Figus"
-        },
-        {
-          titulo: "Practica Las Provincias",
-          descripcion: "App para recordar y practicar las provincias Argentinas con sus capitales",
-          archivo: "Provincias.html",
-          etiqueta: "Estudio"
-        }
+    <p class="tip">
+      En iPhone: abrí esta página en Safari → Compartir → Añadir a pantalla de inicio.
+    </p>
+  </main>
+
+  <script>
+    // ============================================================
+    // EDITÁ SOLAMENTE ESTA LISTA PARA AGREGAR O QUITAR APPS
+    // ============================================================
+    const proyectos = [
+      {
+        titulo: "Servicio Técnico",
+        descripcion: "Seguimiento de reparaciones y generación de informes.",
+        archivo: "Informe_Reparacion_Maquina_V1.html",
+        categoria: "Trabajo",
+        icono: "🔧",
+        favorito: true
+      },
+      {
+        titulo: "Calculadora",
+        descripcion: "Herramienta rápida para hacer cálculos.",
+        archivo: "calculadora_futurista_iphone13.html",
+        categoria: "Herramientas",
+        icono: "🧮",
+        favorito: true
+      },
+      {
+        titulo: "Acelerador",
+        descripcion: "Herramienta para acelerar y escuchar audios más rápido.",
+        archivo: "Acelerador.html",
+        categoria: "Herramientas",
+        icono: "🎧",
+        favorito: false
+      },
+      {
+        titulo: "Tablas de multiplicar",
+        descripcion: "Juego para practicar las tablas de multiplicar.",
+        archivo: "tablas_multiplicar.html",
+        categoria: "Educación",
+        icono: "✖️",
+        favorito: false
+      },
+      {
+        titulo: "Figuritas 2026",
+        descripcion: "App para organizar e intercambiar figuritas.",
+        archivo: "intercambio_figus.html",
+        categoria: "Juegos",
+        icono: "⚽",
+        favorito: false
+      },
+      {
+        titulo: "Provincias Argentinas",
+        descripcion: "Práctica de provincias argentinas y sus capitales.",
+        archivo: "Provincias.html",
+        categoria: "Educación",
+        icono: "🇦🇷",
+        favorito: false
+      }
+    ];
+
+    const projectsGrid = document.getElementById("projectsGrid");
+    const filters = document.getElementById("filters");
+    const searchInput = document.getElementById("searchInput");
+    const clearBtn = document.getElementById("clearBtn");
+    const counter = document.getElementById("counter");
+    const sectionTitle = document.getElementById("sectionTitle");
+
+    let categoriaActiva = "Todas";
+
+    const favoritosGuardados = JSON.parse(
+      localStorage.getItem("bidAppsFavoritos") || "{}"
+    );
+
+    proyectos.forEach((p, i) => {
+      if (favoritosGuardados[p.archivo] !== undefined) {
+        p.favorito = favoritosGuardados[p.archivo];
+      }
+    });
+
+    function guardarFavoritos() {
+      const data = {};
+      proyectos.forEach(p => data[p.archivo] = !!p.favorito);
+      localStorage.setItem("bidAppsFavoritos", JSON.stringify(data));
+    }
+
+    function normalizar(texto) {
+      return (texto || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function categoriasDisponibles() {
+      return [
+        "Todas",
+        "Favoritos",
+        ...[...new Set(proyectos.map(p => p.categoria))].sort()
       ];
+    }
 
-      const projectsGrid = document.getElementById('projectsGrid');
+    function crearFiltros() {
+      filters.innerHTML = "";
 
-      function crearTarjeta(proyecto) {
-        const article = document.createElement('article');
-        article.className = 'card';
+      categoriasDisponibles().forEach(categoria => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "filter-btn" + (categoria === categoriaActiva ? " active" : "");
+        btn.textContent =
+          categoria === "Favoritos"
+            ? "⭐ Favoritos"
+            : categoria;
 
-        const tag = document.createElement('span');
-        tag.className = 'tag';
-        tag.textContent = proyecto.etiqueta || 'Proyecto';
+        btn.addEventListener("click", () => {
+          categoriaActiva = categoria;
+          crearFiltros();
+          renderizar();
+        });
 
-        const title = document.createElement('h2');
-        title.textContent = proyecto.titulo || 'Sin título';
+        filters.appendChild(btn);
+      });
+    }
 
-        const desc = document.createElement('p');
-        desc.textContent = proyecto.descripcion || 'Sin descripción.';
+    function abrirProyecto(proyecto) {
+      if (!proyecto.archivo || proyecto.archivo === "#") return;
+      window.location.href = proyecto.archivo;
+    }
 
-        const actions = document.createElement('div');
-        actions.className = 'actions';
+    function crearTarjeta(proyecto) {
+      const article = document.createElement("article");
+      article.className = "card";
+      article.tabIndex = 0;
+      article.setAttribute("role", "link");
 
-        const openBtn = document.createElement('a');
-        openBtn.className = 'btn btn-primary';
-        openBtn.textContent = proyecto.archivo === '#' ? 'Próximamente' : 'Abrir';
-        openBtn.href = proyecto.archivo || '#';
-
-        actions.appendChild(openBtn);
-
-        if (proyecto.archivo && proyecto.archivo !== '#') {
-          const newTabBtn = document.createElement('a');
-          newTabBtn.className = 'btn btn-secondary';
-          newTabBtn.textContent = 'Abrir en pestaña nueva';
-          newTabBtn.href = proyecto.archivo;
-          newTabBtn.target = '_blank';
-          newTabBtn.rel = 'noopener';
-          actions.appendChild(newTabBtn);
-        } else {
-          openBtn.classList.remove('btn-primary');
-          openBtn.classList.add('btn-secondary');
+      article.addEventListener("click", () => abrirProyecto(proyecto));
+      article.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          abrirProyecto(proyecto);
         }
+      });
 
-        article.appendChild(tag);
-        article.appendChild(title);
-        article.appendChild(desc);
-        article.appendChild(actions);
+      const top = document.createElement("div");
+      top.className = "card-top";
 
-        return article;
+      const icon = document.createElement("div");
+      icon.className = "icon";
+      icon.textContent = proyecto.icono || "📄";
+
+      const favBtn = document.createElement("button");
+      favBtn.type = "button";
+      favBtn.className = "fav";
+      favBtn.title = proyecto.favorito ? "Quitar de favoritos" : "Agregar a favoritos";
+      favBtn.textContent = proyecto.favorito ? "⭐" : "☆";
+
+      favBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        proyecto.favorito = !proyecto.favorito;
+        guardarFavoritos();
+        crearFiltros();
+        renderizar();
+      });
+
+      top.appendChild(icon);
+      top.appendChild(favBtn);
+
+      const title = document.createElement("h3");
+      title.textContent = proyecto.titulo || "Sin título";
+
+      const desc = document.createElement("p");
+      desc.textContent = proyecto.descripcion || "Sin descripción.";
+
+      const footer = document.createElement("div");
+      footer.className = "card-footer";
+
+      const tag = document.createElement("span");
+      tag.className = "tag";
+      tag.textContent = proyecto.categoria || "Proyecto";
+
+      const open = document.createElement("span");
+      open.className = "open";
+      open.textContent = "Abrir →";
+
+      footer.appendChild(tag);
+      footer.appendChild(open);
+
+      article.appendChild(top);
+      article.appendChild(title);
+      article.appendChild(desc);
+      article.appendChild(footer);
+
+      return article;
+    }
+
+    function obtenerProyectosFiltrados() {
+      const q = normalizar(searchInput.value.trim());
+
+      return proyectos
+        .filter(p => {
+          if (categoriaActiva === "Todas") return true;
+          if (categoriaActiva === "Favoritos") return !!p.favorito;
+          return p.categoria === categoriaActiva;
+        })
+        .filter(p => {
+          if (!q) return true;
+
+          const texto = normalizar(
+            `${p.titulo} ${p.descripcion} ${p.categoria} ${p.archivo}`
+          );
+
+          return texto.includes(q);
+        })
+        .sort((a, b) => {
+          if (a.favorito !== b.favorito) return a.favorito ? -1 : 1;
+          return a.titulo.localeCompare(b.titulo, "es");
+        });
+    }
+
+    function renderizar() {
+      projectsGrid.innerHTML = "";
+
+      const filtrados = obtenerProyectosFiltrados();
+
+      sectionTitle.textContent =
+        categoriaActiva === "Todas"
+          ? "Todas las aplicaciones"
+          : categoriaActiva === "Favoritos"
+            ? "Favoritos"
+            : categoriaActiva;
+
+      counter.textContent =
+        `${filtrados.length} ${filtrados.length === 1 ? "app" : "apps"}`;
+
+      if (!filtrados.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.innerHTML = `
+          <div style="font-size:34px;margin-bottom:8px">🔎</div>
+          No encontré aplicaciones con ese filtro.
+        `;
+        projectsGrid.appendChild(empty);
+        return;
       }
 
-      proyectos.forEach(proyecto => {
+      filtrados.forEach(proyecto => {
         projectsGrid.appendChild(crearTarjeta(proyecto));
       });
-    </script>
+    }
 
-    <p class="note">Sugerencia práctica: dejá este archivo como <strong>index.html</strong> y guardá cada app con su propio nombre, por ejemplo <strong>tablas_multiplicar.html</strong>.</p>
-  </div>
+    searchInput.addEventListener("input", renderizar);
+
+    clearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      categoriaActiva = "Todas";
+      crearFiltros();
+      renderizar();
+      searchInput.focus();
+    });
+
+    crearFiltros();
+    renderizar();
+  </script>
 </body>
 </html>
