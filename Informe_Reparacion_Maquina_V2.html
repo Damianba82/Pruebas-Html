@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gestión de Reparaciones</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#171717;background:#f3f4f6}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:980px;margin:auto;padding:16px}
+h1{font-size:28px;margin:6px 0 18px}h2{font-size:20px;margin:0 0 12px}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px #00000010}
+label{display:block;font-weight:700;margin:10px 0 6px}
+input,textarea,select{width:100%;font:inherit;padding:12px;border:1px solid #ccd0d5;border-radius:10px;background:#fff}
+textarea{min-height:86px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{font:inherit;font-weight:700;border:0;border-radius:11px;padding:12px 14px;cursor:pointer}
+.primary{background:#111;color:#fff}.secondary{background:#e9ebee}.success{background:#dff6e6;color:#176c35}
+.warning{background:#fff3cd;color:#7a5800}.danger{background:#fee;color:#900}.info{background:#e7f1ff;color:#174d8c}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.small{font-size:13px;color:#666}
+.item{border-top:1px solid #eee;margin-top:14px;padding-top:14px}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}
+.badge-diagnosticada{background:#e7f1ff;color:#174d8c}.badge-reparacion{background:#fff3cd;color:#7a5800}.badge-terminada{background:#dff6e6;color:#176c35}
+.history-card{border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-top:10px}
+.history-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.history-title{font-weight:800;font-size:17px}.history-meta{font-size:13px;color:#666;margin-top:4px}
+.timerbox{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.timer{font-size:22px;font-weight:800;min-width:105px}
+.note{padding:10px 12px;border-radius:10px;background:#f7f7f8;margin-top:8px}.hidden{display:none!important}
+#printHeader{display:none}
+@media(max-width:700px){.row{grid-template-columns:1fr}.photos{grid-template-columns:repeat(2,1fr)}.history-head{flex-direction:column}}
+@media print{
+ body{background:#fff}.wrap{max-width:none;padding:0}.card{box-shadow:none;border:0;border-radius:0;padding:8px 0}
+ .no-print{display:none!important}#historySection{display:none!important}input,textarea,select{border:0;padding:2px 0;appearance:none}
+ #printHeader{display:block;margin-bottom:14px}.item{break-inside:avoid}.photos img{max-height:210px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="printHeader"><h1 id="printTitle">Informe</h1><div id="printSubtitle" class="small"></div></div>
+<div class="no-print"><h1>Gestión de reparaciones</h1></div>
+
+<div class="card">
+  <div class="row">
+    <div><label>Máquina / Equipo</label><input id="machine" placeholder="Ej.: Fileteadora FIL-400"></div>
+    <div><label>N.º de serie</label><input id="serial" placeholder="Número de serie"></div>
+  </div>
+  <div class="row">
+    <div><label>Cliente</label><input id="client" placeholder="Cliente"></div>
+    <div><label>Fecha de ingreso</label><input id="date" type="date"></div>
+  </div>
+  <div class="row">
+    <div><label>Estado</label>
+      <select id="status">
+        <option value="diagnosticada">Diagnosticada</option>
+        <option value="reparacion">En reparación</option>
+        <option value="terminada">Terminada</option>
+      </select>
+    </div>
+    <div><label>Horas totales de reparación</label><input id="hours" type="number" min="0" step="0.1" placeholder="Ej.: 3.5"></div>
+  </div>
+
+  <label>Diagnóstico</label>
+  <textarea id="diagnosis" placeholder="Falla detectada, piezas comprometidas, estado general y trabajo recomendado..."></textarea>
+
+  <div class="note"><strong>Flujo:</strong> enviás primero el diagnóstico, luego pasás el equipo a “En reparación” y al finalizar lo marcás como “Terminada” para enviar el informe completo.</div>
+</div>
+
+<div class="card no-print">
+  <h2>Control de tiempo</h2>
+  <div class="timerbox">
+    <div class="timer" id="timerDisplay">00:00:00</div>
+    <button class="success" onclick="startTimer()">Iniciar</button>
+    <button class="warning" onclick="stopTimer()">Detener</button>
+    <button class="secondary" onclick="resetTimer()">Reiniciar</button>
+  </div>
+  <div class="small" style="margin-top:8px">El contador suma el tiempo acumulado al campo de horas.</div>
+</div>
+
+<div class="card no-print">
+  <h2>Agregar componente / trabajo</h2>
+  <label>Título</label><input id="title" placeholder="Ej.: Motor principal">
+  <label>Descripción</label><textarea id="desc" placeholder="Daño observado, reparación realizada, repuesto cambiado..."></textarea>
+  <label>Fotos</label><input id="photos" type="file" accept="image/*" capture="environment" multiple>
+  <div class="actions"><button class="primary" onclick="addItem()">Agregar al informe</button></div>
+</div>
+
+<div id="items"></div>
+
+<div class="card" id="finalCard">
+  <label>Trabajo realizado / conclusión</label>
+  <textarea id="final" placeholder="Reparaciones realizadas, repuestos utilizados, pruebas y observaciones finales..."></textarea>
+</div>
+
+<div class="card no-print">
+  <h2>Acciones</h2>
+  <div class="actions">
+    <button class="info" onclick="setStatus('diagnosticada')">Marcar Diagnosticada</button>
+    <button class="warning" onclick="setStatus('reparacion')">Pasar a Reparación</button>
+    <button class="success" onclick="setStatus('terminada')">Marcar Terminada</button>
+  </div>
+  <div class="actions">
+    <button class="info" onclick="printDiagnosis()">Procesar diagnóstico / PDF</button>
+    <button class="info" onclick="shareDiagnosis()">Enviar diagnóstico por WhatsApp</button>
+  </div>
+  <div class="actions">
+    <button class="primary" onclick="printFinal()">Procesar informe final / PDF</button>
+    <button class="primary" onclick="shareFinal()">Enviar informe final por WhatsApp</button>
+  </div>
+  <div class="actions">
+    <button class="secondary" onclick="saveCurrent()">Guardar reparación</button>
+    <button class="secondary" onclick="newRepair()">Nueva reparación</button>
+  </div>
+  <p class="small">En iPhone, después de procesar el PDF podés usar Compartir para enviarlo por WhatsApp.</p>
+</div>
+
+<div id="historySection" class="card no-print">
+  <h2>Historial de reparaciones</h2>
+  <div id="history"></div>
+</div>
+</div>
+
+<script>
+const STORAGE_KEY="repairManagerV2";
+let store=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{"repairs":[],"currentId":null}');
+let current=null;
+const ids=["machine","serial","client","date","status","hours","diagnosis","final"];
+
+function uid(){return "R"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function esc(s){return (s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function statusLabel(v){return v==="diagnosticada"?"Diagnosticada":v==="reparacion"?"En reparación":"Terminada"}
+function nowISO(){return new Date().toISOString()}
+function createBlank(){return {id:uid(),machine:"",serial:"",client:"",date:new Date().toISOString().slice(0,10),status:"diagnosticada",hours:"",diagnosis:"",final:"",items:[],createdAt:nowISO(),updatedAt:nowISO(),timerSeconds:0,timerStartedAt:null}}
+
+function persist(){localStorage.setItem(STORAGE_KEY,JSON.stringify(store))}
+function syncCurrent(){ids.forEach(id=>current[id]=document.getElementById(id).value);current.updatedAt=nowISO()}
+function loadCurrent(){ids.forEach(id=>document.getElementById(id).value=current[id]??"");updateTimerDisplay()}
+function saveCurrent(showMessage=true){syncCurrent();persist();renderHistory();if(showMessage)alert("Reparación guardada.")}
+
+function init(){
+ if(store.currentId) current=store.repairs.find(r=>r.id===store.currentId)||null;
+ if(!current){current=createBlank();store.repairs.unshift(current);store.currentId=current.id;persist()}
+ loadCurrent();renderItems();renderHistory();updateTimerDisplay();setInterval(updateTimerDisplay,1000)
+}
+
+function renderItems(){
+ const root=document.getElementById("items");root.innerHTML="";
+ (current.items||[]).forEach((x,i)=>{
+   const d=document.createElement("div");d.className="card item";
+   d.innerHTML=`<h2>${esc(x.title)}</h2><p>${esc(x.desc).replace(/\n/g,"<br>")}</p>
+   <div class="photos">${(x.photos||[]).map(p=>`<img src="${p}">`).join("")}</div>
+   <div class="actions no-print"><button class="danger" onclick="removeItem(${i})">Eliminar</button></div>`;
+   root.appendChild(d)
+ })
+}
+
+async function addItem(){
+ const title=document.getElementById("title").value.trim();
+ const desc=document.getElementById("desc").value.trim();
+ if(!title){alert("Poné un título al componente o trabajo.");return}
+ const files=[...document.getElementById("photos").files],photos=[];
+ for(const f of files) photos.push(await compress(f));
+ current.items.push({title,desc,photos,createdAt:nowISO()});
+ document.getElementById("title").value="";document.getElementById("desc").value="";document.getElementById("photos").value="";
+ saveCurrent(false);renderItems()
+}
+
+function compress(file){
+ return new Promise((resolve,reject)=>{
+   const r=new FileReader();
+   r.onload=()=>{const img=new Image();img.onload=()=>{const max=1400,scale=Math.min(1,max/Math.max(img.width,img.height));
+   const c=document.createElement("canvas");c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+   c.getContext("2d").drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL("image/jpeg",.78))};img.onerror=reject;img.src=r.result};
+   r.onerror=reject;r.readAsDataURL(file)
+ })
+}
+
+function removeItem(i){if(confirm("¿Eliminar este ítem?")){current.items.splice(i,1);saveCurrent(false);renderItems()}}
+function setStatus(status){document.getElementById("status").value=status;current.status=status;saveCurrent(false);renderHistory()}
+
+function timerTotalSeconds(){
+ let total=current.timerSeconds||0;
+ if(current.timerStartedAt) total+=Math.floor((Date.now()-new Date(current.timerStartedAt).getTime())/1000);
+ return Math.max(0,total)
+}
+function updateTimerDisplay(){
+ if(!current)return;
+ const total=timerTotalSeconds(),h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;
+ document.getElementById("timerDisplay").textContent=String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")
+}
+function startTimer(){if(current.timerStartedAt)return;current.timerStartedAt=nowISO();persist();updateTimerDisplay()}
+function stopTimer(){
+ if(!current.timerStartedAt)return;
+ current.timerSeconds=timerTotalSeconds();current.timerStartedAt=null;
+ const hrs=current.timerSeconds/3600;document.getElementById("hours").value=(Math.round(hrs*10)/10).toFixed(1);
+ current.hours=document.getElementById("hours").value;saveCurrent(false);updateTimerDisplay()
+}
+function resetTimer(){
+ if(!confirm("¿Reiniciar el contador?"))return;
+ current.timerSeconds=0;current.timerStartedAt=null;current.hours="";document.getElementById("hours").value="";persist();updateTimerDisplay()
+}
+
+function preparePrint(mode){
+ syncCurrent();
+ const title=document.getElementById("printTitle"),sub=document.getElementById("printSubtitle");
+ if(mode==="diagnosis"){
+   title.textContent="Informe de diagnóstico";
+   sub.textContent=`${current.machine||"Equipo"} · ${current.serial||"Sin serie"} · ${current.client||"Sin cliente"}`;
+   document.getElementById("items").classList.add("hidden");document.getElementById("finalCard").classList.add("hidden");
+ }else{
+   title.textContent="Informe final de reparación";
+   sub.textContent=`${current.machine||"Equipo"} · ${current.serial||"Sin serie"} · ${current.client||"Sin cliente"} · ${statusLabel(current.status)}`;
+   document.getElementById("items").classList.remove("hidden");document.getElementById("finalCard").classList.remove("hidden")
+ }
+ persist()
+}
+function cleanupPrint(){document.getElementById("items").classList.remove("hidden");document.getElementById("finalCard").classList.remove("hidden")}
+window.addEventListener("afterprint",cleanupPrint);
+
+function printDiagnosis(){setStatus("diagnosticada");preparePrint("diagnosis");window.print()}
+function printFinal(){preparePrint("final");window.print()}
+
+function shareDiagnosis(){
+ syncCurrent();
+ const txt=`DIAGNÓSTICO DE REPARACIÓN
+Máquina: ${current.machine||"-"}
+Serie: ${current.serial||"-"}
+Cliente: ${current.client||"-"}
+Estado: Diagnosticada
+
+Diagnóstico:
+${current.diagnosis||"-"}
+
+Adjunto el PDF del diagnóstico.`;
+ window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")
+}
+function shareFinal(){
+ syncCurrent();
+ const txt=`INFORME DE REPARACIÓN
+Máquina: ${current.machine||"-"}
+Serie: ${current.serial||"-"}
+Cliente: ${current.client||"-"}
+Estado: ${statusLabel(current.status)}
+Horas: ${current.hours||"0"}
+
+Trabajo realizado:
+${current.final||"-"}
+
+Adjunto el informe final en PDF.`;
+ window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")
+}
+
+function newRepair(){
+ syncCurrent();persist();current=createBlank();store.repairs.unshift(current);store.currentId=current.id;persist();
+ loadCurrent();renderItems();renderHistory();window.scrollTo({top:0,behavior:"smooth"})
+}
+function openRepair(id){
+ syncCurrent();persist();current=store.repairs.find(r=>r.id===id);if(!current)return;
+ store.currentId=current.id;persist();loadCurrent();renderItems();window.scrollTo({top:0,behavior:"smooth"})
+}
+function resendDiagnosis(id){
+ const target=store.repairs.find(r=>r.id===id);if(!target)return;
+ const txt=`DIAGNÓSTICO DE REPARACIÓN
+Máquina: ${target.machine||"-"}
+Serie: ${target.serial||"-"}
+Cliente: ${target.client||"-"}
+Estado: ${statusLabel(target.status)}
+
+Diagnóstico:
+${target.diagnosis||"-"}
+
+Adjunto el PDF del diagnóstico.`;
+ window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")
+}
+function resendFinal(id){
+ const target=store.repairs.find(r=>r.id===id);if(!target)return;
+ const txt=`INFORME DE REPARACIÓN
+Máquina: ${target.machine||"-"}
+Serie: ${target.serial||"-"}
+Cliente: ${target.client||"-"}
+Estado: ${statusLabel(target.status)}
+Horas: ${target.hours||"0"}
+
+Trabajo realizado:
+${target.final||"-"}
+
+Adjunto el informe final en PDF.`;
+ window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank")
+}
+function deleteRepair(id){
+ if(!confirm("¿Eliminar esta reparación del historial?"))return;
+ store.repairs=store.repairs.filter(r=>r.id!==id);
+ if(current.id===id){
+   current=store.repairs[0]||createBlank();
+   if(store.repairs.length===0)store.repairs.push(current);
+   store.currentId=current.id;loadCurrent();renderItems()
+ }
+ persist();renderHistory()
+}
+
+function renderHistory(){
+ const root=document.getElementById("history");root.innerHTML="";
+ if(store.repairs.length===0){root.innerHTML='<p class="small">Todavía no hay reparaciones registradas.</p>';return}
+ store.repairs.slice().sort((a,b)=>new Date(b.updatedAt||0)-new Date(a.updatedAt||0)).forEach(r=>{
+   const div=document.createElement("div");div.className="history-card";
+   div.innerHTML=`<div class="history-head">
+     <div><div class="history-title">${esc(r.machine||"Equipo sin nombre")}</div>
+     <div class="history-meta">${esc(r.serial||"Sin serie")} · ${esc(r.client||"Sin cliente")} · ${esc(r.date||"Sin fecha")}</div></div>
+     <span class="badge badge-${r.status}">${statusLabel(r.status)}</span>
+   </div>
+   <div class="history-meta" style="margin-top:8px">Horas: ${esc(r.hours||"0")} · Ítems: ${(r.items||[]).length}</div>
+   <div class="actions">
+     <button class="secondary" onclick="openRepair('${r.id}')">Ver detalle</button>
+     <button class="info" onclick="resendDiagnosis('${r.id}')">Reenviar diagnóstico</button>
+     <button class="primary" onclick="resendFinal('${r.id}')">Reenviar informe</button>
+     <button class="danger" onclick="deleteRepair('${r.id}')">Eliminar</button>
+   </div>`;
+   root.appendChild(div)
+ })
+}
+
+document.addEventListener("input",e=>{if(ids.includes(e.target.id)){syncCurrent();persist();renderHistory()}});
+document.addEventListener("change",e=>{if(ids.includes(e.target.id)){syncCurrent();persist();renderHistory()}});
+init();
+</script>
+</body>
+</html>
